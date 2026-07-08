@@ -7,9 +7,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        /* ===== COMPLETE STYLES ===== */
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; background: #f0f4f8; color: #1a202c; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f0f4f8;
+            color: #1a202c;
+        }
         ::-webkit-scrollbar { width: 6px; height: 6px; }
         ::-webkit-scrollbar-track { background: #e2e8f0; }
         ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
@@ -377,6 +384,95 @@
             height: 250px;
         }
 
+        /* ===== COLLAPSIBLE ===== */
+        .collapsible-year {
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            overflow: hidden;
+            background: white;
+        }
+        .collapsible-year .year-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 20px;
+            background: #f8fafc;
+            cursor: pointer;
+            user-select: none;
+            transition: background 0.2s;
+            border-bottom: 2px solid #e2e8f0;
+        }
+        .collapsible-year .year-header:hover {
+            background: #f1f5f9;
+        }
+        .collapsible-year .year-header .year-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .collapsible-year .year-header .year-title .year-badge {
+            background: #e2e8f0;
+            color: #475569;
+            padding: 2px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+        .collapsible-year .year-header .year-title .year-total {
+            font-size: 13px;
+            font-weight: 400;
+            color: #64748b;
+        }
+        .collapsible-year .year-header .collapse-icon {
+            font-size: 18px;
+            transition: transform 0.3s;
+            color: #94a3b8;
+        }
+        .collapsible-year .year-header .collapse-icon.open {
+            transform: rotate(180deg);
+        }
+        .collapsible-year .year-content {
+            padding: 0;
+            overflow: hidden;
+            transition: max-height 0.4s ease;
+            max-height: 10000px;
+        }
+        .collapsible-year .year-content.hidden {
+            max-height: 0;
+            padding: 0;
+        }
+        .collapsible-year .year-content .year-table-wrap {
+            padding: 16px 20px 20px;
+        }
+
+        .kpi-mini-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        .kpi-mini-card {
+            background: #f8fafc;
+            padding: 12px 16px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid #e2e8f0;
+        }
+        .kpi-mini-card .kpi-number {
+            font-size: 20px;
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .kpi-mini-card .kpi-label {
+            font-size: 11px;
+            color: #64748b;
+            margin-top: 2px;
+        }
+
         @media (max-width: 768px) {
             .sidebar { transform: translateX(-100%); width: 280px; }
             .sidebar.open { transform: translateX(0); }
@@ -394,6 +490,7 @@
             .modal .modal-footer .btn { width: 100%; justify-content: center; }
             .inline-edit { width: 80px; font-size: 10px; }
             .chart-grid { grid-template-columns: 1fr; }
+            .kpi-mini-grid { grid-template-columns: 1fr 1fr; }
         }
         .mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: #0f172a; padding: 8px; }
     </style>
@@ -404,34 +501,67 @@
         const API_URL = 'https://fleet-database1.onrender.com';
         let chartInstances = {};
         
-        const DEFAULT_BUDGET = {
-            'Jan': 3318900,
-            'Feb': 3350200,
-            'Mar': 4912800,
-            'Apr': 4782000,
-            'May': 4912800,
-            'Jun': 4782000,
-            'Jul': 4333800,
-            'Aug': 4600600,
-            'Sep': 4782000,
-            'Oct': 4912800,
-            'Nov': 4782000,
-            'Dec': 4243800
+        // ===== MULTI-YEAR BUDGET =====
+        const DEFAULT_BUDGETS = {
+            '2026': {
+                'Jan': 3318900,
+                'Feb': 3350200,
+                'Mar': 4912800,
+                'Apr': 4782000,
+                'May': 4912800,
+                'Jun': 4782000,
+                'Jul': 4333800,
+                'Aug': 4600600,
+                'Sep': 4782000,
+                'Oct': 4912800,
+                'Nov': 4782000,
+                'Dec': 4243800
+            },
+            '2027': {
+                'Jan': 3400000,
+                'Feb': 3450000,
+                'Mar': 5000000,
+                'Apr': 4850000,
+                'May': 5000000,
+                'Jun': 4850000,
+                'Jul': 4400000,
+                'Aug': 4650000,
+                'Sep': 4850000,
+                'Oct': 5000000,
+                'Nov': 4850000,
+                'Dec': 4300000
+            }
         };
         
-        const DEFAULT_UTILIZATION = {
-            'Jan': 30,
-            'Feb': 28,
-            'Mar': 31,
-            'Apr': 30,
-            'May': 31,
-            'Jun': 30,
-            'Jul': 31,
-            'Aug': 31,
-            'Sep': 30,
-            'Oct': 31,
-            'Nov': 30,
-            'Dec': 31
+        const DEFAULT_UTILIZATION_BUDGETS = {
+            '2026': {
+                'Jan': 30,
+                'Feb': 28,
+                'Mar': 31,
+                'Apr': 30,
+                'May': 31,
+                'Jun': 30,
+                'Jul': 31,
+                'Aug': 31,
+                'Sep': 30,
+                'Oct': 31,
+                'Nov': 30,
+                'Dec': 31
+            },
+            '2027': {
+                'Jan': 30,
+                'Feb': 28,
+                'Mar': 31,
+                'Apr': 30,
+                'May': 31,
+                'Jun': 30,
+                'Jul': 31,
+                'Aug': 31,
+                'Sep': 30,
+                'Oct': 31,
+                'Nov': 30,
+                'Dec': 31
+            }
         };
         
         let state = {
@@ -451,31 +581,61 @@
             editingId: null,
             tenderFilter: { status: 'all', year: 'all' },
             invoiceFilter: { month: 'all', vessel: 'all', groupBy: 'month' },
-            annualBudget: JSON.parse(localStorage.getItem('dj_annual_budget')) || DEFAULT_BUDGET,
-            utilizationBudget: JSON.parse(localStorage.getItem('dj_utilization_budget')) || DEFAULT_UTILIZATION,
-            invoiceCounter: 0
+            utilizationFilter: { year: 'all', month: 'all' },
+            annualBudgets: JSON.parse(localStorage.getItem('dj_annual_budgets')) || DEFAULT_BUDGETS,
+            utilizationBudgets: JSON.parse(localStorage.getItem('dj_utilization_budgets')) || DEFAULT_UTILIZATION_BUDGETS,
+            invoiceCounter: 0,
+            expandedYears: JSON.parse(localStorage.getItem('dj_expanded_years')) || {}
         };
 
-        function saveBudget() {
-            localStorage.setItem('dj_annual_budget', JSON.stringify(state.annualBudget));
+        // ===== BUDGET FUNCTIONS =====
+        function saveBudgets() {
+            localStorage.setItem('dj_annual_budgets', JSON.stringify(state.annualBudgets));
+            localStorage.setItem('dj_utilization_budgets', JSON.stringify(state.utilizationBudgets));
         }
 
-        function saveUtilizationBudget() {
-            localStorage.setItem('dj_utilization_budget', JSON.stringify(state.utilizationBudget));
+        function getBudget(year, month) {
+            if (!state.annualBudgets[year]) {
+                // Copy default for this year
+                const defaultYear = Object.keys(DEFAULT_BUDGETS).includes(year) ? year : '2026';
+                state.annualBudgets[year] = { ...DEFAULT_BUDGETS[defaultYear] };
+                saveBudgets();
+            }
+            return state.annualBudgets[year][month] || 0;
         }
 
-        function updateBudget(month, value) {
-            const numValue = parseFloat(value) || 0;
-            state.annualBudget[month] = numValue;
-            saveBudget();
+        function getUtilBudget(year, month) {
+            if (!state.utilizationBudgets[year]) {
+                const defaultYear = Object.keys(DEFAULT_UTILIZATION_BUDGETS).includes(year) ? year : '2026';
+                state.utilizationBudgets[year] = { ...DEFAULT_UTILIZATION_BUDGETS[defaultYear] };
+                saveBudgets();
+            }
+            return state.utilizationBudgets[year][month] || 0;
+        }
+
+        function updateBudget(year, month, value) {
+            if (!state.annualBudgets[year]) {
+                state.annualBudgets[year] = {};
+            }
+            state.annualBudgets[year][month] = parseFloat(value) || 0;
+            saveBudgets();
             renderInvoices();
             attachAppEvents();
         }
 
-        function updateUtilizationBudget(month, value) {
-            const numValue = parseFloat(value) || 0;
-            state.utilizationBudget[month] = numValue;
-            saveUtilizationBudget();
+        function updateUtilBudget(year, month, value) {
+            if (!state.utilizationBudgets[year]) {
+                state.utilizationBudgets[year] = {};
+            }
+            state.utilizationBudgets[year][month] = parseFloat(value) || 0;
+            saveBudgets();
+            renderUtilization();
+            attachAppEvents();
+        }
+
+        function toggleYear(year) {
+            state.expandedYears[year] = !state.expandedYears[year];
+            localStorage.setItem('dj_expanded_years', JSON.stringify(state.expandedYears));
             renderUtilization();
             attachAppEvents();
         }
@@ -538,6 +698,7 @@
             `;
         }
 
+        // ===== MODALS =====
         function renderModal() {
             if (state.modalType === 'client') return renderClientModal();
             if (state.modalType === 'vessel') return renderVesselModal();
@@ -548,7 +709,71 @@
             return '';
         }
 
-        // ===== INVOICE MODAL =====
+        function renderUtilizationModal() {
+            const data = state.modalData || {};
+            const isEdit = state.editingId !== null;
+            
+            const vesselOptions = state.vessels.map(v => 
+                `<option value="${v.id}" ${data.vessel_id == v.id ? 'selected' : ''}>${v.name}</option>`
+            ).join('');
+            
+            return `
+                <div class="modal-overlay" id="modalOverlay">
+                    <div class="modal" style="max-width: 640px;">
+                        <div class="modal-header">
+                            <h2><span>📈</span> ${isEdit ? 'Edit' : 'Add New'} Vessel Utilization</h2>
+                            <button class="modal-close" id="modalCloseBtn">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Vessel <span class="required">*</span></label>
+                                <select id="utilizationVessel">
+                                    <option value="">Select Vessel...</option>
+                                    ${vesselOptions}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Month <span class="required">*</span></label>
+                                <input type="month" id="utilizationMonth" value="${data.month || ''}" />
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Budgeted Days <span class="required">*</span></label>
+                                    <input type="number" id="utilizationBudget" placeholder="e.g. 30" value="${data.budget_days || ''}" oninput="updateUtilizationCalc()" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Actual Onhire Days <span class="required">*</span></label>
+                                    <input type="number" id="utilizationActual" placeholder="e.g. 25" value="${data.onhire_days || ''}" oninput="updateUtilizationCalc()" />
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Remarks</label>
+                                <input type="text" id="utilizationRemarks" placeholder="Additional notes..." value="${data.remarks || ''}" />
+                            </div>
+                            
+                            <div class="calc-preview">
+                                <div class="calc-row">
+                                    <span class="label">Variance (Days)</span>
+                                    <span class="value" id="calcUtilVariance">0</span>
+                                </div>
+                                <div class="calc-row">
+                                    <span class="label">Variance (%)</span>
+                                    <span class="value" id="calcUtilVariancePercent">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                            <button class="btn btn-primary" id="modalSaveBtn">${isEdit ? '💾 Update Utilization' : '💾 Save Utilization'}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         function renderInvoiceModal() {
             const data = state.modalData || {};
             const isEdit = state.editingId !== null;
@@ -561,7 +786,6 @@
                 `<option value="${c.name}" ${data.charterer === c.name ? 'selected' : ''}>${c.name}</option>`
             ).join('');
             
-            // Calculate expected payment date (30 days from submission date)
             let expectedDate = '';
             if (data.submission_date) {
                 const subDate = new Date(data.submission_date);
@@ -664,31 +888,6 @@
                     </div>
                 </div>
             `;
-        }
-
-        // ===== UPDATE EXPECTED PAYMENT DATE =====
-        function updateExpectedPayment() {
-            const subDate = document.getElementById('invoiceSubmissionDate')?.value;
-            if (subDate) {
-                const date = new Date(subDate);
-                const expDate = new Date(date);
-                expDate.setDate(expDate.getDate() + 30);
-                document.getElementById('invoiceExpectedDate').value = expDate.toISOString().split('T')[0];
-            } else {
-                document.getElementById('invoiceExpectedDate').value = '';
-            }
-        }
-
-        // ===== CALCULATE INVOICE TOTAL =====
-        function updateInvoiceCalc() {
-            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
-            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
-            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
-            const total = (dcr * days) + mobDemob;
-            
-            document.getElementById('calcDcrDays').textContent = 'RM ' + (dcr * days).toLocaleString();
-            document.getElementById('calcMobDemob').textContent = 'RM ' + mobDemob.toLocaleString();
-            document.getElementById('calcTotalBill').textContent = 'RM ' + total.toLocaleString();
         }
 
         function renderClientModal() {
@@ -995,69 +1194,27 @@
             `;
         }
 
-        function renderUtilizationModal() {
-            const data = state.modalData || {};
-            const isEdit = state.editingId !== null;
-            
-            const vesselOptions = state.vessels.map(v => 
-                `<option value="${v.id}" ${data.vessel_id == v.id ? 'selected' : ''}>${v.name}</option>`
-            ).join('');
-            
-            return `
-                <div class="modal-overlay" id="modalOverlay">
-                    <div class="modal" style="max-width: 640px;">
-                        <div class="modal-header">
-                            <h2><span>📈</span> ${isEdit ? 'Edit' : 'Add New'} Vessel Utilization</h2>
-                            <button class="modal-close" id="modalCloseBtn">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label>Vessel <span class="required">*</span></label>
-                                <select id="utilizationVessel">
-                                    <option value="">Select Vessel...</option>
-                                    ${vesselOptions}
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Month <span class="required">*</span></label>
-                                <input type="month" id="utilizationMonth" value="${data.month || ''}" />
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Budgeted Days <span class="required">*</span></label>
-                                    <input type="number" id="utilizationBudget" placeholder="e.g. 30" value="${data.budget_days || ''}" oninput="updateUtilizationCalc()" />
-                                </div>
-                                <div class="form-group">
-                                    <label>Actual Onhire Days <span class="required">*</span></label>
-                                    <input type="number" id="utilizationActual" placeholder="e.g. 25" value="${data.onhire_days || ''}" oninput="updateUtilizationCalc()" />
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Remarks</label>
-                                <input type="text" id="utilizationRemarks" placeholder="Additional notes..." value="${data.remarks || ''}" />
-                            </div>
-                            
-                            <div class="calc-preview">
-                                <div class="calc-row">
-                                    <span class="label">Variance (Days)</span>
-                                    <span class="value" id="calcUtilVariance">0</span>
-                                </div>
-                                <div class="calc-row">
-                                    <span class="label">Variance (%)</span>
-                                    <span class="value" id="calcUtilVariancePercent">0%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
-                            <button class="btn btn-primary" id="modalSaveBtn">${isEdit ? '💾 Update Utilization' : '💾 Save Utilization'}</button>
-                        </div>
-                    </div>
-                </div>
-            `;
+        // ===== CALCULATION FUNCTIONS =====
+        function updateInvoiceCalc() {
+            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
+            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
+            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
+            const total = (dcr * days) + mobDemob;
+            document.getElementById('calcDcrDays').textContent = 'RM ' + (dcr * days).toLocaleString();
+            document.getElementById('calcMobDemob').textContent = 'RM ' + mobDemob.toLocaleString();
+            document.getElementById('calcTotalBill').textContent = 'RM ' + total.toLocaleString();
+        }
+
+        function updateExpectedPayment() {
+            const subDate = document.getElementById('invoiceSubmissionDate')?.value;
+            if (subDate) {
+                const date = new Date(subDate);
+                const expDate = new Date(date);
+                expDate.setDate(expDate.getDate() + 30);
+                document.getElementById('invoiceExpectedDate').value = expDate.toISOString().split('T')[0];
+            } else {
+                document.getElementById('invoiceExpectedDate').value = '';
+            }
         }
 
         function updateUtilizationCalc() {
@@ -1065,7 +1222,6 @@
             const actual = parseFloat(document.getElementById('utilizationActual')?.value) || 0;
             const variance = actual - budget;
             const variancePercent = budget > 0 ? ((variance / budget) * 100).toFixed(1) : 0;
-            
             document.getElementById('calcUtilVariance').textContent = variance;
             document.getElementById('calcUtilVariancePercent').textContent = variancePercent + '%';
         }
@@ -1340,6 +1496,7 @@
             attachAppEvents();
         }
 
+        // ===== MODAL OPEN/CLOSE =====
         function openModal(type, data = {}, id = null) {
             state.showModal = true;
             state.modalType = type;
@@ -1371,74 +1528,7 @@
             attachAppEvents();
         }
 
-        // ===== SAVE INVOICE =====
-        function saveInvoice() {
-            const invoiceNumber = document.getElementById('invoiceNumber')?.value?.trim();
-            const vessel = document.getElementById('invoiceVessel')?.value;
-            const charterer = document.getElementById('invoiceCharterer')?.value;
-            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
-            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
-            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
-            const submissionDate = document.getElementById('invoiceSubmissionDate')?.value || '';
-            const expectedPaymentDate = document.getElementById('invoiceExpectedDate')?.value || '';
-            const month = document.getElementById('invoiceMonth')?.value || '';
-            const budgetedSale = parseFloat(document.getElementById('invoiceBudgeted')?.value) || 0;
-            const actualBillInput = document.getElementById('invoiceActual')?.value;
-            
-            if (!invoiceNumber) { alert('⚠️ Invoice Number is required!'); return; }
-            if (!vessel) { alert('⚠️ Please select a Vessel!'); return; }
-            if (!charterer) { alert('⚠️ Please select a Charterer!'); return; }
-            if (!dcr || dcr <= 0) { alert('⚠️ Please enter a valid DCR!'); return; }
-            if (!days || days <= 0) { alert('⚠️ Please enter valid Total Days!'); return; }
-            if (!submissionDate) { alert('⚠️ Please select a Submission Date!'); return; }
-            
-            const totalBill = (dcr * days) + mobDemob;
-            
-            let actualBill = parseFloat(actualBillInput) || 0;
-            if (!actualBillInput || actualBillInput === '' || actualBill === 0) {
-                actualBill = totalBill;
-            }
-            
-            const data = {
-                invoice_number: invoiceNumber,
-                vessel_name: vessel,
-                charterer: charterer,
-                dcr: dcr,
-                duration: days,
-                mob_demob: mobDemob,
-                total_amount: totalBill,
-                submission_date: submissionDate,
-                expected_payment_date: expectedPaymentDate,
-                month: month,
-                budgeted_sale: budgetedSale,
-                actual_bill: actualBill,
-                contract_id: 0
-            };
-            
-            console.log('📦 Saving invoice data:', data);
-            
-            const btn = document.getElementById('modalSaveBtn');
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
-            
-            const isEdit = state.editingId !== null;
-            const promise = isEdit ? putData('invoices', state.editingId, data) : postData('invoices', data);
-            
-            promise.then(() => {
-                closeModal();
-                loadAllData();
-                alert(isEdit ? '✅ Invoice updated!\nTotal Bill: RM ' + totalBill.toLocaleString() : '✅ Invoice added!\nTotal Bill: RM ' + totalBill.toLocaleString());
-            }).catch((err) => {
-                console.error('Error saving invoice:', err);
-                alert('❌ Error saving invoice: ' + err.message);
-            }).finally(() => { 
-                if (btn) { 
-                    btn.disabled = false; 
-                    btn.textContent = isEdit ? '💾 Update Invoice' : '💾 Save Invoice'; 
-                } 
-            });
-        }
-
-        // ===== SAVE CLIENT =====
+        // ===== SAVE FUNCTIONS =====
         function saveClient() {
             const name = document.getElementById('clientName')?.value?.trim();
             if (!name) { alert('⚠️ Client Name is required!'); return; }
@@ -1460,7 +1550,6 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Client' : '💾 Save Client'; } });
         }
 
-        // ===== SAVE VESSEL =====
         function saveVessel() {
             const name = document.getElementById('vesselName')?.value?.trim();
             if (!name) { alert('⚠️ Vessel Name is required!'); return; }
@@ -1486,7 +1575,6 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Vessel' : '💾 Save Vessel'; } });
         }
 
-        // ===== SAVE CONTRACT =====
         function saveContract() {
             const title = document.getElementById('contractTitle')?.value?.trim();
             const clientId = document.getElementById('contractClient')?.value;
@@ -1532,7 +1620,6 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Contract' : '💾 Save Contract'; } });
         }
 
-        // ===== SAVE TENDER =====
         function saveTender() {
             const title = document.getElementById('tenderTitle')?.value?.trim();
             const clientId = document.getElementById('tenderClient')?.value;
@@ -1584,17 +1671,83 @@
             });
         }
 
-        // ===== SAVE UTILIZATION =====
+        function saveInvoice() {
+            const invoiceNumber = document.getElementById('invoiceNumber')?.value?.trim();
+            const vessel = document.getElementById('invoiceVessel')?.value;
+            const charterer = document.getElementById('invoiceCharterer')?.value;
+            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
+            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
+            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
+            const submissionDate = document.getElementById('invoiceSubmissionDate')?.value || '';
+            const expectedPaymentDate = document.getElementById('invoiceExpectedDate')?.value || '';
+            const month = document.getElementById('invoiceMonth')?.value || '';
+            const budgetedSale = parseFloat(document.getElementById('invoiceBudgeted')?.value) || 0;
+            const actualBillInput = document.getElementById('invoiceActual')?.value;
+            
+            if (!invoiceNumber) { alert('⚠️ Invoice Number is required!'); return; }
+            if (!vessel) { alert('⚠️ Please select a Vessel!'); return; }
+            if (!charterer) { alert('⚠️ Please select a Charterer!'); return; }
+            if (!dcr || dcr <= 0) { alert('⚠️ Please enter a valid DCR!'); return; }
+            if (!days || days <= 0) { alert('⚠️ Please enter valid Total Days!'); return; }
+            if (!submissionDate) { alert('⚠️ Please select a Submission Date!'); return; }
+            
+            const totalBill = (dcr * days) + mobDemob;
+            
+            let actualBill = parseFloat(actualBillInput) || 0;
+            if (!actualBillInput || actualBillInput === '' || actualBill === 0) {
+                actualBill = totalBill;
+            }
+            
+            const data = {
+                invoice_number: invoiceNumber,
+                vessel_name: vessel,
+                charterer: charterer,
+                dcr: dcr,
+                duration: days,
+                mob_demob: mobDemob,
+                total_amount: totalBill,
+                submission_date: submissionDate,
+                expected_payment_date: expectedPaymentDate,
+                month: month,
+                budgeted_sale: budgetedSale,
+                actual_bill: actualBill,
+                contract_id: 0
+            };
+            
+            const btn = document.getElementById('modalSaveBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
+            
+            const isEdit = state.editingId !== null;
+            const promise = isEdit ? putData('invoices', state.editingId, data) : postData('invoices', data);
+            
+            promise.then(() => {
+                closeModal();
+                loadAllData();
+                alert(isEdit ? '✅ Invoice updated!\nTotal Bill: RM ' + totalBill.toLocaleString() : '✅ Invoice added!\nTotal Bill: RM ' + totalBill.toLocaleString());
+            }).catch((err) => {
+                console.error('Error saving invoice:', err);
+                alert('❌ Error saving invoice: ' + err.message);
+            }).finally(() => { 
+                if (btn) { 
+                    btn.disabled = false; 
+                    btn.textContent = isEdit ? '💾 Update Invoice' : '💾 Save Invoice'; 
+                } 
+            });
+        }
+
         function saveUtilization() {
             const vesselId = document.getElementById('utilizationVessel')?.value;
             const month = document.getElementById('utilizationMonth')?.value;
             const budgetDays = parseFloat(document.getElementById('utilizationBudget')?.value) || 0;
             const actualDays = parseFloat(document.getElementById('utilizationActual')?.value) || 0;
             const remarks = document.getElementById('utilizationRemarks')?.value?.trim() || '';
+            
             if (!vesselId) { alert('⚠️ Please select a Vessel!'); return; }
             if (!month) { alert('⚠️ Please select a Month!'); return; }
+            
             const varianceDays = actualDays - budgetDays;
             const variancePercent = budgetDays > 0 ? ((varianceDays / budgetDays) * 100) : 0;
+            
             const data = {
                 vessel_id: parseInt(vesselId),
                 month: month,
@@ -1604,10 +1757,13 @@
                 variance_percent: variancePercent,
                 remarks: remarks
             };
+            
             const btn = document.getElementById('modalSaveBtn');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
+            
             const isEdit = state.editingId !== null;
             const promise = isEdit ? putData('utilization', state.editingId, data) : postData('utilization', data);
+            
             promise.then(() => {
                 closeModal();
                 loadAllData();
@@ -1631,17 +1787,14 @@
                 if (e.target === e.currentTarget) closeModal();
             });
             
-            // Invoice calculations
             document.getElementById('invoiceDcr')?.addEventListener('input', updateInvoiceCalc);
             document.getElementById('invoiceDays')?.addEventListener('input', updateInvoiceCalc);
             document.getElementById('invoiceMobDemob')?.addEventListener('input', updateInvoiceCalc);
             document.getElementById('invoiceSubmissionDate')?.addEventListener('change', updateExpectedPayment);
             
-            // Utilization calculation
             document.getElementById('utilizationBudget')?.addEventListener('input', updateUtilizationCalc);
             document.getElementById('utilizationActual')?.addEventListener('input', updateUtilizationCalc);
             
-            // Tender calculation
             document.getElementById('tenderStart')?.addEventListener('change', updateTenderCalc);
             document.getElementById('tenderDuration')?.addEventListener('input', updateTenderCalc);
             
@@ -1706,15 +1859,18 @@
                     attachAppEvents();
                 });
             });
+            
             document.getElementById('mobileMenuToggle')?.addEventListener('click', () => {
                 document.getElementById('sidebar')?.classList.toggle('open');
             });
+            
             document.getElementById('logoutBtn')?.addEventListener('click', () => {
                 state.isLoggedIn = false;
                 state.user = null;
                 localStorage.removeItem('dj_user');
                 render();
             });
+            
             document.querySelectorAll('[data-delete]').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     if (confirm('Delete this item?')) {
@@ -1723,6 +1879,7 @@
                     }
                 });
             });
+            
             document.querySelectorAll('[data-edit]').forEach(btn => {
                 btn.addEventListener('click', () => {
                     const type = btn.dataset.edit;
@@ -1762,6 +1919,7 @@
                     }
                 });
             });
+            
             document.querySelectorAll('[data-upload]').forEach(input => {
                 input.addEventListener('change', async (e) => {
                     const file = e.target.files[0];
@@ -1774,16 +1932,20 @@
                     input.value = '';
                 });
             });
+            
+            // Tender Filters
             document.getElementById('filterStatus')?.addEventListener('change', (e) => {
                 state.tenderFilter.status = e.target.value;
                 renderTenders();
                 attachAppEvents();
             });
+            
             document.getElementById('filterYear')?.addEventListener('change', (e) => {
                 state.tenderFilter.year = e.target.value;
                 renderTenders();
                 attachAppEvents();
             });
+            
             document.getElementById('filterClear')?.addEventListener('click', () => {
                 state.tenderFilter.status = 'all';
                 state.tenderFilter.year = 'all';
@@ -1792,21 +1954,26 @@
                 renderTenders();
                 attachAppEvents();
             });
+            
+            // Invoice Filters
             document.getElementById('invoiceFilterMonth')?.addEventListener('change', (e) => {
                 state.invoiceFilter.month = e.target.value;
                 renderInvoices();
                 attachAppEvents();
             });
+            
             document.getElementById('invoiceFilterVessel')?.addEventListener('change', (e) => {
                 state.invoiceFilter.vessel = e.target.value;
                 renderInvoices();
                 attachAppEvents();
             });
+            
             document.getElementById('invoiceGroupBy')?.addEventListener('change', (e) => {
                 state.invoiceFilter.groupBy = e.target.value;
                 renderInvoices();
                 attachAppEvents();
             });
+            
             document.getElementById('invoiceFilterClear')?.addEventListener('click', () => {
                 state.invoiceFilter.month = 'all';
                 state.invoiceFilter.vessel = 'all';
@@ -1815,12 +1982,190 @@
                 renderInvoices();
                 attachAppEvents();
             });
+            
+            // Utilization Filters
+            document.getElementById('utilFilterYear')?.addEventListener('change', (e) => {
+                state.utilizationFilter.year = e.target.value;
+                renderUtilization();
+                attachAppEvents();
+            });
+            
+            document.getElementById('utilFilterMonth')?.addEventListener('change', (e) => {
+                state.utilizationFilter.month = e.target.value;
+                renderUtilization();
+                attachAppEvents();
+            });
+            
+            document.getElementById('utilFilterClear')?.addEventListener('click', () => {
+                state.utilizationFilter.year = 'all';
+                state.utilizationFilter.month = 'all';
+                document.getElementById('utilFilterYear').value = 'all';
+                document.getElementById('utilFilterMonth').value = 'all';
+                renderUtilization();
+                attachAppEvents();
+            });
+            
             document.getElementById('addClientBtn')?.addEventListener('click', () => openModal('client'));
             document.getElementById('addVesselBtn')?.addEventListener('click', () => openModal('vessel'));
             document.getElementById('addContractBtn')?.addEventListener('click', () => openModal('contract'));
             document.getElementById('addTenderBtn')?.addEventListener('click', () => openModal('tender'));
             document.getElementById('addInvoiceBtn')?.addEventListener('click', () => openModal('invoice'));
             document.getElementById('addUtilizationBtn')?.addEventListener('click', () => openModal('utilization'));
+        }
+
+        // ===== RENDER TENDERS =====
+        function renderTenders() {
+            const years = [];
+            state.tenders.forEach(t => {
+                if (t.submission_date) {
+                    const year = new Date(t.submission_date).getFullYear();
+                    if (!years.includes(year) && !isNaN(year)) {
+                        years.push(year);
+                    }
+                }
+            });
+            years.sort((a, b) => b - a);
+
+            let filteredTenders = [...state.tenders];
+            if (state.tenderFilter.status !== 'all') {
+                filteredTenders = filteredTenders.filter(t => 
+                    (t.status || 'submitted') === state.tenderFilter.status
+                );
+            }
+            if (state.tenderFilter.year !== 'all') {
+                filteredTenders = filteredTenders.filter(t => {
+                    if (!t.submission_date) return false;
+                    const year = new Date(t.submission_date).getFullYear();
+                    return year === parseInt(state.tenderFilter.year);
+                });
+            }
+
+            const tendersByYear = {};
+            filteredTenders.forEach(t => {
+                const year = t.submission_date ? new Date(t.submission_date).getFullYear() : 'No Date';
+                if (!tendersByYear[year]) {
+                    tendersByYear[year] = [];
+                }
+                tendersByYear[year].push(t);
+            });
+
+            const sortedYears = Object.keys(tendersByYear).sort((a, b) => {
+                if (a === 'No Date') return 1;
+                if (b === 'No Date') return -1;
+                return b - a;
+            });
+
+            let tableRows = '';
+            sortedYears.forEach(year => {
+                const yearTenders = tendersByYear[year];
+                tableRows += `
+                    <tr style="background:#f1f5f9;font-weight:700;">
+                        <td colspan="11" style="padding:8px 12px;font-size:13px;color:#0f172a;">
+                            📅 ${year === 'No Date' ? 'No Submission Date' : year}
+                            <span style="font-weight:400;color:#94a3b8;font-size:12px;margin-left:12px;">
+                                ${yearTenders.length} tender${yearTenders.length > 1 ? 's' : ''}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+                yearTenders.forEach(t => {
+                    const duration = t.duration ? parseInt(t.duration) : '';
+                    const status = t.status || 'submitted';
+                    tableRows += `
+                    <tr>
+                        <td><strong>${t.title || '-'}</strong></td>
+                        <td>${t.client_name || '-'}</td>
+                        <td>${t.proposed_vessel || '-'}</td>
+                        <td>${t.proposed_rate || '-'}</td>
+                        <td>${t.start_date || '-'}</td>
+                        <td>${t.end_date || '-'}</td>
+                        <td>${duration || '-'}</td>
+                        <td>${t.submission_date || '-'}</td>
+                        <td>${t.chances || '-'}</td>
+                        <td><span class="status-badge ${status}">${status}</span></td>
+                        <td>
+                            <div class="action-group">
+                                <button class="btn btn-warning btn-sm" data-edit="tenders" data-id="${t.id}">✏️</button>
+                                <button class="btn btn-danger btn-sm" data-delete="tenders" data-id="${t.id}">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                });
+            });
+
+            const statusOptions = ['all', 'submitted', 'under-review', 'awarded', 'rejected', 'aborted', 'unsuccessful'];
+            const statusLabels = {
+                'all': 'All Statuses',
+                'submitted': 'Submitted',
+                'under-review': 'Under Review',
+                'awarded': 'Awarded',
+                'rejected': 'Rejected',
+                'aborted': 'Aborted',
+                'unsuccessful': 'Unsuccessful'
+            };
+            const statusFilterHtml = statusOptions.map(s => 
+                `<option value="${s}" ${state.tenderFilter.status === s ? 'selected' : ''}>${statusLabels[s]}</option>`
+            ).join('');
+            const yearFilterHtml = years.map(y => 
+                `<option value="${y}">${y}</option>`
+            ).join('');
+
+            if (!state.tenders.length) {
+                tableRows = `<tr><td colspan="11" class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <div class="empty-title">No tenders yet</div>
+                    <div class="empty-sub">Click "Add Tender" to get started</div>
+                </td></tr>`;
+            }
+
+            return `
+                <div class="page-header">
+                    <div><h1>📋 Tenders</h1><div class="subtitle">Track submitted and awarded tenders</div></div>
+                    <button class="btn btn-primary" id="addTenderBtn">➕ Add Tender</button>
+                </div>
+                
+                <div class="filter-bar">
+                    <label>Status:</label>
+                    <select id="filterStatus">${statusFilterHtml}</select>
+                    <label>Year:</label>
+                    <select id="filterYear">
+                        <option value="all">All Years</option>
+                        ${yearFilterHtml}
+                    </select>
+                    <button class="filter-clear" id="filterClear">✕ Clear Filters</button>
+                    <span style="font-size:12px;color:#94a3b8;margin-left:auto;">
+                        Showing ${filteredTenders.length} of ${state.tenders.length} tenders
+                    </span>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📋 All Tenders</h3>
+                        <span class="count-badge">${filteredTenders.length}</span>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Client</th>
+                                    <th>Vessel(s)</th>
+                                    <th>Proposed Rate</th>
+                                    <th>Start Date</th>
+                                    <th>End Date</th>
+                                    <th>Duration</th>
+                                    <th>Submission Date</th>
+                                    <th>Chances</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
         }
 
         // ===== RENDER INVOICES =====
@@ -1981,17 +2326,37 @@
                 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
             };
             
+            // Get all years from invoices
+            const invoiceYears = [];
+            state.invoices.forEach(i => {
+                if (i.month) {
+                    const year = i.month.split('-')[0];
+                    if (!invoiceYears.includes(year) && !isNaN(year)) {
+                        invoiceYears.push(year);
+                    }
+                }
+            });
+            invoiceYears.sort();
+            const selectedInvoiceYear = document.getElementById('invoiceYearFilter')?.value || 'all';
+            
+            // Build monthly data for selected year
             const monthlyData = {};
             monthNames.forEach(m => {
-                monthlyData[m] = { budgeted: state.annualBudget[m] || 0, actual: 0, totalBill: 0 };
+                monthlyData[m] = { budgeted: 0, actual: 0, totalBill: 0 };
             });
             
-            state.invoices.forEach(i => {
+            let filteredForBudget = state.invoices;
+            if (selectedInvoiceYear !== 'all') {
+                filteredForBudget = state.invoices.filter(i => i.month && i.month.startsWith(selectedInvoiceYear));
+            }
+            
+            filteredForBudget.forEach(i => {
                 if (i.month) {
                     const monthNum = i.month.split('-')[1];
                     const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
                     if (monthName && monthlyData[monthName]) {
-                        monthlyData[monthName].budgeted = state.annualBudget[monthName] || 0;
+                        const year = i.month.split('-')[0];
+                        monthlyData[monthName].budgeted += getBudget(year, monthName);
                         const actualAmount = i.actual_bill || i.total_amount || 0;
                         monthlyData[monthName].actual += actualAmount;
                         monthlyData[monthName].totalBill += i.total_amount || 0;
@@ -2020,7 +2385,7 @@
                         <td><strong>${month}</strong></td>
                         <td>
                             <input type="number" class="inline-edit" value="${budgeted}" 
-                                   onchange="updateBudget('${month}', this.value)" 
+                                   onchange="updateBudget('${selectedInvoiceYear !== 'all' ? selectedInvoiceYear : '2026'}', '${month}', this.value)" 
                                    style="width:120px;text-align:right;" />
                         </td>
                         <td>RM ${actual.toLocaleString()}</td>
@@ -2053,6 +2418,10 @@
             const vesselFilterHtml = vessels.map(v => 
                 `<option value="${v}" ${state.invoiceFilter.vessel === v ? 'selected' : ''}>${v}</option>`
             ).join('');
+            
+            const yearFilterHtml = invoiceYears.map(y => 
+                `<option value="${y}" ${selectedInvoiceYear === y ? 'selected' : ''}>${y}</option>`
+            ).join('');
 
             if (!state.invoices.length) {
                 tableRows = `<tr><td colspan="13" class="empty-state">
@@ -2069,6 +2438,12 @@
                 </div>
                 
                 <div class="filter-bar">
+                    <label>Year:</label>
+                    <select id="invoiceYearFilter" onchange="renderInvoices(); attachAppEvents();">
+                        <option value="all">All Years</option>
+                        ${yearFilterHtml}
+                    </select>
+                    
                     <label>Group By:</label>
                     <select id="invoiceGroupBy">
                         <option value="month" ${state.invoiceFilter.groupBy === 'month' ? 'selected' : ''}>Month</option>
@@ -2124,7 +2499,7 @@
                 
                 <div class="card">
                     <div class="card-header">
-                        <h3>📈 Annual Budget Summary</h3>
+                        <h3>📈 Annual Budget Summary ${selectedInvoiceYear !== 'all' ? '- ' + selectedInvoiceYear : ''}</h3>
                         <span class="count-badge">Editable Budget</span>
                         <span style="font-size:11px;color:#94a3b8;">Click on budget values to edit</span>
                     </div>
@@ -2171,281 +2546,342 @@
             `;
         }
 
-        // ===== RENDER TENDERS =====
-        function renderTenders() {
-            const years = [];
-            state.tenders.forEach(t => {
-                if (t.submission_date) {
-                    const year = new Date(t.submission_date).getFullYear();
-                    if (!years.includes(year) && !isNaN(year)) {
-                        years.push(year);
-                    }
-                }
-            });
-            years.sort((a, b) => b - a);
-
-            let filteredTenders = [...state.tenders];
-            if (state.tenderFilter.status !== 'all') {
-                filteredTenders = filteredTenders.filter(t => 
-                    (t.status || 'submitted') === state.tenderFilter.status
-                );
-            }
-            if (state.tenderFilter.year !== 'all') {
-                filteredTenders = filteredTenders.filter(t => {
-                    if (!t.submission_date) return false;
-                    const year = new Date(t.submission_date).getFullYear();
-                    return year === parseInt(state.tenderFilter.year);
-                });
-            }
-
-            const tendersByYear = {};
-            filteredTenders.forEach(t => {
-                const year = t.submission_date ? new Date(t.submission_date).getFullYear() : 'No Date';
-                if (!tendersByYear[year]) {
-                    tendersByYear[year] = [];
-                }
-                tendersByYear[year].push(t);
-            });
-
-            const sortedYears = Object.keys(tendersByYear).sort((a, b) => {
-                if (a === 'No Date') return 1;
-                if (b === 'No Date') return -1;
-                return b - a;
-            });
-
-            let tableRows = '';
-            sortedYears.forEach(year => {
-                const yearTenders = tendersByYear[year];
-                tableRows += `
-                    <tr style="background:#f1f5f9;font-weight:700;">
-                        <td colspan="11" style="padding:8px 12px;font-size:13px;color:#0f172a;">
-                            📅 ${year === 'No Date' ? 'No Submission Date' : year}
-                            <span style="font-weight:400;color:#94a3b8;font-size:12px;margin-left:12px;">
-                                ${yearTenders.length} tender${yearTenders.length > 1 ? 's' : ''}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-                yearTenders.forEach(t => {
-                    const duration = t.duration ? parseInt(t.duration) : '';
-                    const status = t.status || 'submitted';
-                    tableRows += `
-                    <tr>
-                        <td><strong>${t.title || '-'}</strong></td>
-                        <td>${t.client_name || '-'}</td>
-                        <td>${t.proposed_vessel || '-'}</td>
-                        <td>${t.proposed_rate || '-'}</td>
-                        <td>${t.start_date || '-'}</td>
-                        <td>${t.end_date || '-'}</td>
-                        <td>${duration || '-'}</td>
-                        <td>${t.submission_date || '-'}</td>
-                        <td>${t.chances || '-'}</td>
-                        <td><span class="status-badge ${status}">${status}</span></td>
-                        <td>
-                            <div class="action-group">
-                                <button class="btn btn-warning btn-sm" data-edit="tenders" data-id="${t.id}">✏️</button>
-                                <button class="btn btn-danger btn-sm" data-delete="tenders" data-id="${t.id}">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                });
-            });
-
-            const statusOptions = ['all', 'submitted', 'under-review', 'awarded', 'rejected', 'aborted', 'unsuccessful'];
-            const statusLabels = {
-                'all': 'All Statuses',
-                'submitted': 'Submitted',
-                'under-review': 'Under Review',
-                'awarded': 'Awarded',
-                'rejected': 'Rejected',
-                'aborted': 'Aborted',
-                'unsuccessful': 'Unsuccessful'
-            };
-            const statusFilterHtml = statusOptions.map(s => 
-                `<option value="${s}" ${state.tenderFilter.status === s ? 'selected' : ''}>${statusLabels[s]}</option>`
-            ).join('');
-            const yearFilterHtml = years.map(y => 
-                `<option value="${y}">${y}</option>`
-            ).join('');
-
-            if (!state.tenders.length) {
-                tableRows = `<tr><td colspan="11" class="empty-state">
-                    <div class="empty-icon">📋</div>
-                    <div class="empty-title">No tenders yet</div>
-                    <div class="empty-sub">Click "Add Tender" to get started</div>
-                </td></tr>`;
-            }
-
-            return `
-                <div class="page-header">
-                    <div><h1>📋 Tenders</h1><div class="subtitle">Track submitted and awarded tenders</div></div>
-                    <button class="btn btn-primary" id="addTenderBtn">➕ Add Tender</button>
-                </div>
-                
-                <div class="filter-bar">
-                    <label>Status:</label>
-                    <select id="filterStatus">${statusFilterHtml}</select>
-                    <label>Year:</label>
-                    <select id="filterYear">
-                        <option value="all">All Years</option>
-                        ${yearFilterHtml}
-                    </select>
-                    <button class="filter-clear" id="filterClear">✕ Clear Filters</button>
-                    <span style="font-size:12px;color:#94a3b8;margin-left:auto;">
-                        Showing ${filteredTenders.length} of ${state.tenders.length} tenders
-                    </span>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📋 All Tenders</h3>
-                        <span class="count-badge">${filteredTenders.length}</span>
-                    </div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Title</th>
-                                    <th>Client</th>
-                                    <th>Vessel(s)</th>
-                                    <th>Proposed Rate</th>
-                                    <th>Start Date</th>
-                                    <th>End Date</th>
-                                    <th>Duration</th>
-                                    <th>Submission Date</th>
-                                    <th>Chances</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>${tableRows}</tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
-
         // ===== RENDER UTILIZATION =====
         function renderUtilization() {
-            const vesselOptions = state.vessels.map(v => 
-                `<option value="${v.id}">${v.name}</option>`
-            ).join('');
-            
             const monthMap = {
                 'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
                 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
             };
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             
-            const monthlyUtilization = {};
-            monthNames.forEach(m => {
-                monthlyUtilization[m] = { budget: state.utilizationBudget[m] || 0, actual: 0 };
-            });
-            
-            state.invoices.forEach(i => {
-                if (i.month && i.duration) {
-                    const monthNum = i.month.split('-')[1];
-                    const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
-                    if (monthName && monthlyUtilization[monthName]) {
-                        monthlyUtilization[monthName].actual += i.duration || 0;
+            // Get all years from utilization data
+            const utilYears = [];
+            state.utilization.forEach(u => {
+                if (u.month) {
+                    const year = u.month.split('-')[0];
+                    if (!utilYears.includes(year) && !isNaN(year)) {
+                        utilYears.push(year);
                     }
                 }
+            });
+            utilYears.sort();
+            
+            // Also get years from invoices
+            state.invoices.forEach(i => {
+                if (i.month) {
+                    const year = i.month.split('-')[0];
+                    if (!utilYears.includes(year) && !isNaN(year)) {
+                        utilYears.push(year);
+                    }
+                }
+            });
+            utilYears.sort();
+            
+            if (utilYears.length === 0) utilYears.push('2026');
+            
+            const selectedYear = document.getElementById('utilFilterYear')?.value || 'all';
+            const selectedMonth = document.getElementById('utilFilterMonth')?.value || 'all';
+            
+            // Filter utilization by year and month
+            let filteredUtilization = [...state.utilization];
+            if (selectedYear !== 'all') {
+                filteredUtilization = filteredUtilization.filter(u => u.month && u.month.startsWith(selectedYear));
+            }
+            if (selectedMonth !== 'all') {
+                filteredUtilization = filteredUtilization.filter(u => u.month === selectedMonth);
+            }
+            
+            // Calculate monthly summary for all data (not filtered)
+            const allMonthlySummary = {};
+            monthNames.forEach(m => {
+                allMonthlySummary[m] = { budget: 0, actual: 0 };
             });
             
             state.utilization.forEach(u => {
                 if (u.month) {
                     const monthNum = u.month.split('-')[1];
                     const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
-                    if (monthName && monthlyUtilization[monthName]) {
-                        monthlyUtilization[monthName].budget = u.budget_days || state.utilizationBudget[monthName] || 0;
-                        monthlyUtilization[monthName].actual = u.onhire_days || monthlyUtilization[monthName].actual || 0;
+                    if (monthName && allMonthlySummary[monthName]) {
+                        allMonthlySummary[monthName].budget += u.budget_days || 0;
+                        allMonthlySummary[monthName].actual += u.onhire_days || 0;
                     }
                 }
             });
             
-            let cumulativeBudget = 0;
-            let cumulativeActual = 0;
-            let totalBudgetAll = 0;
-            let totalActualAll = 0;
+            // Add invoice data for actual days
+            state.invoices.forEach(i => {
+                if (i.month && i.duration) {
+                    const monthNum = i.month.split('-')[1];
+                    const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
+                    if (monthName && allMonthlySummary[monthName]) {
+                        allMonthlySummary[monthName].actual += i.duration || 0;
+                    }
+                }
+            });
             
-            let tableRows = monthNames.map(month => {
-                const budget = monthlyUtilization[month].budget || 0;
-                const actual = monthlyUtilization[month].actual || 0;
-                cumulativeBudget += budget;
-                cumulativeActual += actual;
-                totalBudgetAll += budget;
-                totalActualAll += actual;
-                const variance = actual - budget;
-                const variancePercent = budget > 0 ? ((variance / budget) * 100).toFixed(1) : 0;
-                const isPositive = variance >= 0;
-                
-                return `
-                    <tr>
-                        <td><strong>${month}</strong></td>
-                        <td>
-                            <input type="number" class="inline-edit" value="${budget}" 
-                                   onchange="updateUtilizationBudget('${month}', this.value)" 
-                                   style="width:100px;text-align:right;" />
-                        </td>
-                        <td>${actual}</td>
-                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${isPositive ? '+' : ''}${variance}
-                        </td>
-                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${isPositive ? '+' : ''}${variancePercent}%
-                        </td>
-                        <td><strong>${cumulativeBudget}</strong></td>
-                        <td><strong>${cumulativeActual}</strong></td>
-                        <td class="${cumulativeActual >= cumulativeBudget ? 'variance-positive' : 'variance-negative'}">
-                            ${cumulativeActual >= cumulativeBudget ? '+' : ''}${(cumulativeActual - cumulativeBudget)}
-                        </td>
-                        <td class="${cumulativeActual >= cumulativeBudget ? 'variance-positive' : 'variance-negative'}">
-                            ${cumulativeBudget > 0 ? ((cumulativeActual - cumulativeBudget) / cumulativeBudget * 100).toFixed(1) : 0}%
-                        </td>
-                    </tr>
-                `;
-            }).join('');
+            // Calculate annual totals
+            let annualBudget = 0;
+            let annualActual = 0;
+            monthNames.forEach(m => {
+                annualBudget += allMonthlySummary[m].budget || 0;
+                annualActual += allMonthlySummary[m].actual || 0;
+            });
+            const annualVariance = annualActual - annualBudget;
+            const annualVariancePercent = annualBudget > 0 ? ((annualVariance / annualBudget) * 100).toFixed(1) : 0;
             
-            const totalVariance = totalActualAll - totalBudgetAll;
-            const totalVariancePercent = totalBudgetAll > 0 ? ((totalVariance / totalBudgetAll) * 100).toFixed(1) : 0;
-            const totalIsPositive = totalVariance >= 0;
-
-            let utilRows = state.utilization.map(u => {
-                const vesselName = state.vessels.find(v => v.id === u.vessel_id)?.name || '-';
-                const variance = (u.onhire_days || 0) - (u.budget_days || 0);
-                const variancePercent = u.budget_days > 0 ? ((variance / u.budget_days) * 100).toFixed(1) : 0;
-                const isPositive = variance >= 0;
-                return `
-                    <tr>
-                        <td><strong>${vesselName}</strong></td>
-                        <td>${u.month || '-'}</td>
-                        <td>${u.budget_days || 0}</td>
-                        <td>${u.onhire_days || 0}</td>
-                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${isPositive ? '+' : ''}${variance}
-                        </td>
-                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${isPositive ? '+' : ''}${variancePercent}%
-                        </td>
-                        <td>${u.remarks || '-'}</td>
-                        <td>
-                            <div class="action-group">
-                                <button class="btn btn-warning btn-sm" data-edit="utilization" data-id="${u.id}">✏️</button>
-                                <button class="btn btn-danger btn-sm" data-delete="utilization" data-id="${u.id}">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-            
-            if (!state.utilization.length) {
-                utilRows = `<tr><td colspan="8" class="empty-state">
-                    <div class="empty-icon">📈</div>
-                    <div class="empty-title">No utilization data yet</div>
-                    <div class="empty-sub">Click "Add Utilization" to get started</div>
-                </td></tr>`;
+            // Calculate MTD
+            const now = new Date();
+            const currentMonthIndex = now.getMonth();
+            let mtdBudget = 0;
+            let mtdActual = 0;
+            for (let i = 0; i <= currentMonthIndex; i++) {
+                const month = monthNames[i];
+                mtdBudget += allMonthlySummary[month].budget || 0;
+                mtdActual += allMonthlySummary[month].actual || 0;
             }
+            const mtdVariance = mtdActual - mtdBudget;
+            const mtdVariancePercent = mtdBudget > 0 ? ((mtdVariance / mtdBudget) * 100).toFixed(1) : 0;
+            
+            // Build collapsible years
+            let yearCardsHtml = '';
+            let totalOverallBudget = 0;
+            let totalOverallActual = 0;
+            
+            const yearsToShow = selectedYear !== 'all' ? [selectedYear] : utilYears;
+            
+            yearsToShow.forEach(year => {
+                // Calculate monthly data for this year
+                const yearMonthSummary = {};
+                monthNames.forEach(m => {
+                    yearMonthSummary[m] = { budget: 0, actual: 0 };
+                });
+                
+                state.utilization.forEach(u => {
+                    if (u.month && u.month.startsWith(year)) {
+                        const monthNum = u.month.split('-')[1];
+                        const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
+                        if (monthName && yearMonthSummary[monthName]) {
+                            yearMonthSummary[monthName].budget += u.budget_days || 0;
+                            yearMonthSummary[monthName].actual += u.onhire_days || 0;
+                        }
+                    }
+                });
+                
+                state.invoices.forEach(i => {
+                    if (i.month && i.month.startsWith(year) && i.duration) {
+                        const monthNum = i.month.split('-')[1];
+                        const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
+                        if (monthName && yearMonthSummary[monthName]) {
+                            yearMonthSummary[monthName].actual += i.duration || 0;
+                        }
+                    }
+                });
+                
+                let yearBudget = 0;
+                let yearActual = 0;
+                let yearCumulativeBudget = 0;
+                let yearCumulativeActual = 0;
+                
+                let yearRows = monthNames.map(month => {
+                    const budget = yearMonthSummary[month].budget || 0;
+                    const actual = yearMonthSummary[month].actual || 0;
+                    yearBudget += budget;
+                    yearActual += actual;
+                    yearCumulativeBudget += budget;
+                    yearCumulativeActual += actual;
+                    const variance = actual - budget;
+                    const variancePercent = budget > 0 ? ((variance / budget) * 100).toFixed(1) : 0;
+                    const isPositive = variance >= 0;
+                    
+                    return `
+                        <tr>
+                            <td><strong>${month}</strong></td>
+                            <td>${budget}</td>
+                            <td>${actual}</td>
+                            <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
+                                ${isPositive ? '+' : ''}${variance}
+                            </td>
+                            <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
+                                ${isPositive ? '+' : ''}${variancePercent}%
+                            </td>
+                            <td><strong>${yearCumulativeBudget}</strong></td>
+                            <td><strong>${yearCumulativeActual}</strong></td>
+                            <td class="${yearCumulativeActual >= yearCumulativeBudget ? 'variance-positive' : 'variance-negative'}">
+                                ${yearCumulativeActual >= yearCumulativeBudget ? '+' : ''}${(yearCumulativeActual - yearCumulativeBudget)}
+                            </td>
+                            <td class="${yearCumulativeActual >= yearCumulativeBudget ? 'variance-positive' : 'variance-negative'}">
+                                ${yearCumulativeBudget > 0 ? ((yearCumulativeActual - yearCumulativeBudget) / yearCumulativeBudget * 100).toFixed(1) : 0}%
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                const yearVariance = yearActual - yearBudget;
+                const yearVariancePercent = yearBudget > 0 ? ((yearVariance / yearBudget) * 100).toFixed(1) : 0;
+                const yearIsPositive = yearVariance >= 0;
+                
+                totalOverallBudget += yearBudget;
+                totalOverallActual += yearActual;
+                
+                const isExpanded = state.expandedYears[year] !== undefined ? state.expandedYears[year] : true;
+                
+                // Filter records for this year
+                let yearRecords = state.utilization.filter(u => u.month && u.month.startsWith(year));
+                if (selectedMonth !== 'all') {
+                    yearRecords = yearRecords.filter(u => u.month === selectedMonth);
+                }
+                
+                let utilRows = yearRecords.map(u => {
+                    const vesselName = state.vessels.find(v => v.id === u.vessel_id)?.name || '-';
+                    const variance = (u.onhire_days || 0) - (u.budget_days || 0);
+                    const variancePercent = u.budget_days > 0 ? ((variance / u.budget_days) * 100).toFixed(1) : 0;
+                    const isPositive = variance >= 0;
+                    return `
+                        <tr>
+                            <td><strong>${vesselName}</strong></td>
+                            <td>${u.month || '-'}</td>
+                            <td>${u.budget_days || 0}</td>
+                            <td>${u.onhire_days || 0}</td>
+                            <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
+                                ${isPositive ? '+' : ''}${variance}
+                            </td>
+                            <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
+                                ${isPositive ? '+' : ''}${variancePercent}%
+                            </td>
+                            <td>${u.remarks || '-'}</td>
+                            <td>
+                                <div class="action-group">
+                                    <button class="btn btn-warning btn-sm" data-edit="utilization" data-id="${u.id}">✏️</button>
+                                    <button class="btn btn-danger btn-sm" data-delete="utilization" data-id="${u.id}">🗑️</button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+                
+                if (!yearRecords.length) {
+                    utilRows = `<tr><td colspan="8" class="empty-state">
+                        <div class="empty-icon">📈</div>
+                        <div class="empty-title">No records for ${year}</div>
+                        <div class="empty-sub">Add utilization data to see records</div>
+                    </td></tr>`;
+                }
+                
+                yearCardsHtml += `
+                    <div class="collapsible-year">
+                        <div class="year-header" onclick="toggleYear('${year}')">
+                            <div class="year-title">
+                                📅 ${year}
+                                <span class="year-badge">${yearRecords.length} records</span>
+                                <span class="year-total">Budget: ${yearBudget} days | Actual: ${yearActual} days</span>
+                            </div>
+                            <span class="collapse-icon ${isExpanded ? 'open' : ''}">▼</span>
+                        </div>
+                        <div class="year-content ${isExpanded ? '' : 'hidden'}">
+                            <div class="year-table-wrap">
+                                <div class="kpi-mini-grid">
+                                    <div class="kpi-mini-card">
+                                        <div class="kpi-number">${yearBudget}</div>
+                                        <div class="kpi-label">📋 Annual Budget</div>
+                                    </div>
+                                    <div class="kpi-mini-card">
+                                        <div class="kpi-number">${yearActual}</div>
+                                        <div class="kpi-label">✅ Annual Actual</div>
+                                    </div>
+                                    <div class="kpi-mini-card" style="border-left: 3px solid ${yearIsPositive ? '#22c55e' : '#ef4444'};">
+                                        <div class="kpi-number" style="color: ${yearIsPositive ? '#4ade80' : '#f87171'}">
+                                            ${yearIsPositive ? '+' : ''}${yearVariance}
+                                        </div>
+                                        <div class="kpi-label">📊 Variance (${yearIsPositive ? '+' : ''}${yearVariancePercent}%)</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="table-container">
+                                    <table>
+                                        <thead>
+                                            <tr>
+                                                <th>Month</th>
+                                                <th>Budget (Days)</th>
+                                                <th>Actual (Days)</th>
+                                                <th>Variance (Days)</th>
+                                                <th>Variance (%)</th>
+                                                <th>Cumulative Budget</th>
+                                                <th>Cumulative Actual</th>
+                                                <th>Cumulative Variance (Days)</th>
+                                                <th>Cumulative Variance (%)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            ${yearRows}
+                                            <tr class="grand-total-row">
+                                                <td><strong>TOTAL</strong></td>
+                                                <td><strong>${yearBudget}</strong></td>
+                                                <td><strong>${yearActual}</strong></td>
+                                                <td class="${yearIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                                    <strong>${yearIsPositive ? '+' : ''}${yearVariance}</strong>
+                                                </td>
+                                                <td class="${yearIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                                    <strong>${yearIsPositive ? '+' : ''}${yearVariancePercent}%</strong>
+                                                </td>
+                                                <td><strong>${yearBudget}</strong></td>
+                                                <td><strong>${yearActual}</strong></td>
+                                                <td class="${yearIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                                    <strong>${yearIsPositive ? '+' : ''}${yearVariance}</strong>
+                                                </td>
+                                                <td class="${yearIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                                    <strong>${yearIsPositive ? '+' : ''}${yearVariancePercent}%</strong>
+                                                </td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                
+                                <div style="margin-top:16px;">
+                                    <div class="table-container">
+                                        <table>
+                                            <thead>
+                                                <tr>
+                                                    <th>Vessel</th>
+                                                    <th>Month</th>
+                                                    <th>Budget Days</th>
+                                                    <th>Actual Days</th>
+                                                    <th>Variance (Days)</th>
+                                                    <th>Variance (%)</th>
+                                                    <th>Remarks</th>
+                                                    <th>Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>${utilRows}</tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Overall total
+            const overallVariance = totalOverallActual - totalOverallBudget;
+            const overallVariancePercent = totalOverallBudget > 0 ? ((overallVariance / totalOverallBudget) * 100).toFixed(1) : 0;
+            const overallIsPositive = overallVariance >= 0;
+
+            // Build year filter options
+            const yearFilterOptions = utilYears.map(y => 
+                `<option value="${y}" ${selectedYear === y ? 'selected' : ''}>${y}</option>`
+            ).join('');
+            
+            // Build month filter options from utilization data
+            const utilMonths = [];
+            state.utilization.forEach(u => {
+                if (u.month && !utilMonths.includes(u.month)) {
+                    utilMonths.push(u.month);
+                }
+            });
+            utilMonths.sort();
+            const monthFilterOptions = utilMonths.map(m => 
+                `<option value="${m}" ${selectedMonth === m ? 'selected' : ''}>${m}</option>`
+            ).join('');
 
             return `
                 <div class="page-header">
@@ -2453,75 +2889,72 @@
                     <button class="btn btn-primary" id="addUtilizationBtn">➕ Add Utilization</button>
                 </div>
                 
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📊 Monthly Utilization Summary</h3>
-                        <span class="count-badge">Editable Budget</span>
+                <!-- Overall KPI Summary -->
+                <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom:20px;">
+                    <div class="stat-card" style="border-left: 4px solid #6366f1;">
+                        <div class="stat-info" style="text-align:center;">
+                            <div class="number" style="font-size:20px;">${totalOverallBudget}</div>
+                            <div class="label">📋 Total Budget (Days)</div>
+                        </div>
                     </div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Month</th>
-                                    <th>Budget (Days)</th>
-                                    <th>Actual (Days)</th>
-                                    <th>Variance (Days)</th>
-                                    <th>Variance (%)</th>
-                                    <th>Cumulative Budget</th>
-                                    <th>Cumulative Actual</th>
-                                    <th>Cumulative Variance (Days)</th>
-                                    <th>Cumulative Variance (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${tableRows}
-                                <tr class="grand-total-row">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td><strong>${totalBudgetAll}</strong></td>
-                                    <td><strong>${totalActualAll}</strong></td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}${totalVariance}</strong>
-                                    </td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}${totalVariancePercent}%</strong>
-                                    </td>
-                                    <td><strong>${totalBudgetAll}</strong></td>
-                                    <td><strong>${totalActualAll}</strong></td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}${totalVariance}</strong>
-                                    </td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}${totalVariancePercent}%</strong>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
+                    <div class="stat-card" style="border-left: 4px solid #22c55e;">
+                        <div class="stat-info" style="text-align:center;">
+                            <div class="number" style="font-size:20px;">${totalOverallActual}</div>
+                            <div class="label">✅ Total Actual (Days)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid ${overallIsPositive ? '#22c55e' : '#ef4444'};">
+                        <div class="stat-info" style="text-align:center;">
+                            <div class="number" style="font-size:20px;color:${overallIsPositive ? '#4ade80' : '#f87171'}">
+                                ${overallIsPositive ? '+' : ''}${overallVariance}
+                            </div>
+                            <div class="label">📊 Total Variance (${overallIsPositive ? '+' : ''}${overallVariancePercent}%)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #f59e0b;">
+                        <div class="stat-info" style="text-align:center;">
+                            <div class="number" style="font-size:20px;">${mtdBudget}</div>
+                            <div class="label">📅 MTD Budget (Days)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid #8b5cf6;">
+                        <div class="stat-info" style="text-align:center;">
+                            <div class="number" style="font-size:20px;">${mtdActual}</div>
+                            <div class="label">📅 MTD Actual (Days)</div>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="border-left: 4px solid ${mtdVariance >= 0 ? '#22c55e' : '#ef4444'};">
+                        <div class="stat-info" style="text-align:center;">
+                            <div class="number" style="font-size:20px;color:${mtdVariance >= 0 ? '#4ade80' : '#f87171'}">
+                                ${mtdVariance >= 0 ? '+' : ''}${mtdVariance}
+                            </div>
+                            <div class="label">📊 MTD Variance (${mtdVariance >= 0 ? '+' : ''}${mtdVariancePercent}%)</div>
+                        </div>
                     </div>
                 </div>
                 
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📋 Vessel Utilization Records</h3>
-                        <span class="count-badge">${state.utilization.length} Records</span>
-                    </div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Vessel</th>
-                                    <th>Month</th>
-                                    <th>Budget Days</th>
-                                    <th>Actual Days</th>
-                                    <th>Variance (Days)</th>
-                                    <th>Variance (%)</th>
-                                    <th>Remarks</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>${utilRows}</tbody>
-                        </table>
-                    </div>
+                <!-- Filter Bar -->
+                <div class="filter-bar">
+                    <label>Year:</label>
+                    <select id="utilFilterYear" onchange="renderUtilization(); attachAppEvents();">
+                        <option value="all">All Years</option>
+                        ${yearFilterOptions}
+                    </select>
+                    
+                    <label>Month:</label>
+                    <select id="utilFilterMonth" onchange="renderUtilization(); attachAppEvents();">
+                        <option value="all">All Months</option>
+                        ${monthFilterOptions}
+                    </select>
+                    
+                    <button class="filter-clear" id="utilFilterClear">✕ Clear Filters</button>
+                    <span style="font-size:12px;color:#94a3b8;margin-left:auto;">
+                        Showing ${filteredUtilization.length} of ${state.utilization.length} records
+                    </span>
                 </div>
+                
+                <!-- Collapsible Year Cards -->
+                ${yearCardsHtml}
             `;
         }
 
@@ -2588,6 +3021,18 @@
             });
             const awardedTenders = tenderStatusMap['awarded'] || 0;
             const winRate = totalTenders > 0 ? ((awardedTenders / totalTenders) * 100).toFixed(1) : 0;
+            
+            // Get years for reports filter
+            const reportYears = [];
+            state.invoices.forEach(i => {
+                if (i.month) {
+                    const year = i.month.split('-')[0];
+                    if (!reportYears.includes(year) && !isNaN(year)) {
+                        reportYears.push(year);
+                    }
+                }
+            });
+            reportYears.sort();
             
             return `
                 <div class="page-header">
@@ -2965,7 +3410,7 @@
                 const budgetData = {};
                 const actualData = {};
                 monthNames.forEach(m => {
-                    budgetData[m] = state.annualBudget[m] || 0;
+                    budgetData[m] = 0;
                     actualData[m] = 0;
                 });
                 state.invoices.forEach(i => {
@@ -2973,6 +3418,8 @@
                         const monthNum = i.month.split('-')[1];
                         const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
                         if (monthName) {
+                            const year = i.month.split('-')[0];
+                            budgetData[monthName] += getBudget(year, monthName);
                             actualData[monthName] += i.total_amount || 0;
                         }
                     }
@@ -3394,9 +3841,12 @@
         window.updateUtilizationCalc = updateUtilizationCalc;
         window.updateExpectedPayment = updateExpectedPayment;
         window.updateBudget = updateBudget;
-        window.updateUtilizationBudget = updateUtilizationBudget;
+        window.updateUtilBudget = updateUtilBudget;
+        window.toggleYear = toggleYear;
         window.renderCharts = renderCharts;
         window.switchTab = switchTab;
+        window.renderUtilization = renderUtilization;
+        window.renderInvoices = renderInvoices;
 
         if (checkSession()) {
             loadAllData();
