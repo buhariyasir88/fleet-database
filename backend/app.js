@@ -1,3 +1,5 @@
+// Force SQLite to use the correct binding
+process.env.SQLITE3_USE_SQLITE_JS = '1';
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
