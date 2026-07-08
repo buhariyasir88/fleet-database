@@ -413,6 +413,7 @@
             display: flex;
             align-items: center;
             gap: 12px;
+            flex-wrap: wrap;
         }
         .collapsible-year .year-header .year-title .year-badge {
             background: #e2e8f0;
@@ -449,26 +450,183 @@
             padding: 16px 20px 20px;
         }
 
+        /* ===== GANTT CHART ===== */
+        .gantt-container {
+            overflow-x: auto;
+            padding: 16px 0;
+            position: relative;
+        }
+        .gantt-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 700px;
+        }
+        .gantt-header {
+            display: flex;
+            padding: 8px 0;
+            border-bottom: 2px solid #e2e8f0;
+            margin-bottom: 8px;
+        }
+        .gantt-header .gantt-label {
+            width: 150px;
+            flex-shrink: 0;
+            font-weight: 600;
+            font-size: 11px;
+            color: #475569;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .gantt-header .gantt-timeline {
+            flex: 1;
+            display: flex;
+            position: relative;
+            height: 20px;
+        }
+        .gantt-header .gantt-timeline .month-label {
+            flex: 1;
+            font-size: 10px;
+            color: #94a3b8;
+            text-align: center;
+            border-left: 1px solid #f1f5f9;
+        }
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            padding: 3px 0;
+            border-radius: 6px;
+            transition: background 0.2s;
+            min-height: 32px;
+        }
+        .gantt-row:hover {
+            background: #f8fafc;
+        }
+        .gantt-row .gantt-label {
+            width: 150px;
+            flex-shrink: 0;
+            font-size: 11px;
+            font-weight: 500;
+            color: #0f172a;
+            padding-right: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .gantt-row .gantt-label .client-name {
+            font-weight: 600;
+            color: #1a237e;
+        }
+        .gantt-row .gantt-label .vessel-name {
+            font-size: 10px;
+            color: #64748b;
+            display: block;
+        }
+        .gantt-row .gantt-bar-wrapper {
+            flex: 1;
+            position: relative;
+            height: 24px;
+        }
+        .gantt-bar {
+            position: absolute;
+            height: 18px;
+            border-radius: 4px;
+            top: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            font-weight: 600;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 20px;
+            padding: 0 6px;
+            white-space: nowrap;
+            opacity: 0.9;
+        }
+        .gantt-bar:hover {
+            transform: scaleY(1.1);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            opacity: 1;
+        }
+        .gantt-bar.status-submitted { background: #f59e0b; }
+        .gantt-bar.status-under-review { background: #3b82f6; }
+        .gantt-bar.status-awarded { background: #22c55e; }
+        .gantt-bar.status-rejected { background: #ef4444; }
+        .gantt-bar.status-aborted { background: #94a3b8; }
+        .gantt-bar.status-unsuccessful { background: #ef4444; }
+        .gantt-bar .gantt-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #0f172a;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            white-space: nowrap;
+            z-index: 10;
+            font-weight: 400;
+        }
+        .gantt-bar:hover .gantt-tooltip {
+            display: block;
+        }
+        .gantt-empty {
+            text-align: center;
+            padding: 30px;
+            color: #94a3b8;
+        }
+        .gantt-empty .gantt-empty-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+        .gantt-card .collapsible-header {
+            cursor: pointer;
+            user-select: none;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+        }
+        .gantt-card .collapsible-header:hover {
+            opacity: 0.8;
+        }
+        .gantt-card .collapsible-header .collapse-icon {
+            transition: transform 0.3s;
+        }
+        .gantt-card .collapsible-header .collapse-icon.collapsed {
+            transform: rotate(-90deg);
+        }
+        .gantt-card .collapsible-content {
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            max-height: 5000px;
+        }
+        .gantt-card .collapsible-content.hidden {
+            max-height: 0;
+        }
         .kpi-mini-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-            margin-bottom: 16px;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 10px;
+            margin-bottom: 12px;
         }
         .kpi-mini-card {
             background: #f8fafc;
-            padding: 12px 16px;
-            border-radius: 10px;
+            padding: 10px 14px;
+            border-radius: 8px;
             text-align: center;
             border: 1px solid #e2e8f0;
         }
         .kpi-mini-card .kpi-number {
-            font-size: 20px;
+            font-size: 18px;
             font-weight: 700;
             color: #0f172a;
         }
         .kpi-mini-card .kpi-label {
-            font-size: 11px;
+            font-size: 10px;
             color: #64748b;
             margin-top: 2px;
         }
@@ -491,6 +649,8 @@
             .inline-edit { width: 80px; font-size: 10px; }
             .chart-grid { grid-template-columns: 1fr; }
             .kpi-mini-grid { grid-template-columns: 1fr 1fr; }
+            .gantt-row .gantt-label { width: 100px; font-size: 10px; }
+            .gantt-header .gantt-label { width: 100px; }
         }
         .mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; cursor: pointer; color: #0f172a; padding: 8px; }
     </style>
@@ -585,7 +745,8 @@
             annualBudgets: JSON.parse(localStorage.getItem('dj_annual_budgets')) || DEFAULT_BUDGETS,
             utilizationBudgets: JSON.parse(localStorage.getItem('dj_utilization_budgets')) || DEFAULT_UTILIZATION_BUDGETS,
             invoiceCounter: 0,
-            expandedYears: JSON.parse(localStorage.getItem('dj_expanded_years')) || {}
+            expandedYears: JSON.parse(localStorage.getItem('dj_expanded_years')) || {},
+            ganttExpanded: JSON.parse(localStorage.getItem('dj_gantt_expanded')) || true
         };
 
         // ===== BUDGET FUNCTIONS =====
@@ -596,7 +757,6 @@
 
         function getBudget(year, month) {
             if (!state.annualBudgets[year]) {
-                // Copy default for this year
                 const defaultYear = Object.keys(DEFAULT_BUDGETS).includes(year) ? year : '2026';
                 state.annualBudgets[year] = { ...DEFAULT_BUDGETS[defaultYear] };
                 saveBudgets();
@@ -637,6 +797,13 @@
             state.expandedYears[year] = !state.expandedYears[year];
             localStorage.setItem('dj_expanded_years', JSON.stringify(state.expandedYears));
             renderUtilization();
+            attachAppEvents();
+        }
+
+        function toggleGantt() {
+            state.ganttExpanded = !state.ganttExpanded;
+            localStorage.setItem('dj_gantt_expanded', JSON.stringify(state.ganttExpanded));
+            renderTenders();
             attachAppEvents();
         }
 
@@ -1714,6 +1881,8 @@
                 contract_id: 0
             };
             
+            console.log('📦 Saving invoice data:', data);
+            
             const btn = document.getElementById('modalSaveBtn');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
             
@@ -1757,6 +1926,8 @@
                 variance_percent: variancePercent,
                 remarks: remarks
             };
+            
+            console.log('📦 Saving utilization data:', data);
             
             const btn = document.getElementById('modalSaveBtn');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
@@ -2013,7 +2184,7 @@
             document.getElementById('addUtilizationBtn')?.addEventListener('click', () => openModal('utilization'));
         }
 
-        // ===== RENDER TENDERS =====
+        // ===== RENDER TENDERS (with Gantt Chart) =====
         function renderTenders() {
             const years = [];
             state.tenders.forEach(t => {
@@ -2040,6 +2211,92 @@
                 });
             }
 
+            // ===== GANTT CHART =====
+            const ganttTenders = filteredTenders.filter(t => t.start_date && t.end_date && t.start_date !== '' && t.end_date !== '');
+            
+            let ganttHtml = '';
+            if (ganttTenders.length > 0) {
+                // Find date range
+                let minDate = new Date();
+                let maxDate = new Date();
+                ganttTenders.forEach(t => {
+                    const start = new Date(t.start_date);
+                    const end = new Date(t.end_date);
+                    if (start < minDate) minDate = start;
+                    if (end > maxDate) maxDate = end;
+                });
+                minDate.setMonth(minDate.getMonth() - 1);
+                maxDate.setMonth(maxDate.getMonth() + 1);
+                
+                const totalDays = Math.ceil((maxDate - minDate) / (1000 * 60 * 60 * 24));
+                const months = [];
+                const current = new Date(minDate);
+                while (current <= maxDate) {
+                    months.push({
+                        date: new Date(current),
+                        label: current.toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
+                    });
+                    current.setMonth(current.getMonth() + 1);
+                }
+
+                let barsHtml = ganttTenders.map(t => {
+                    const start = new Date(t.start_date);
+                    const end = new Date(t.end_date);
+                    const startOffset = Math.ceil((start - minDate) / (1000 * 60 * 60 * 24));
+                    const duration = Math.ceil((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                    const leftPercent = (startOffset / totalDays) * 100;
+                    const widthPercent = Math.min((duration / totalDays) * 100, 100);
+                    const statusClass = t.status || 'submitted';
+                    const displayName = t.client_name || t.title || 'Tender';
+                    const vesselDisplay = t.proposed_vessel || '';
+                    
+                    return `
+                        <div class="gantt-row">
+                            <div class="gantt-label">
+                                <span class="client-name">${displayName}</span>
+                                ${vesselDisplay ? `<span class="vessel-name">${vesselDisplay}</span>` : ''}
+                            </div>
+                            <div class="gantt-bar-wrapper">
+                                <div class="gantt-bar status-${statusClass}" style="left:${Math.max(0, leftPercent)}%;width:${Math.max(2, widthPercent)}%;">
+                                    ${t.title || 'Tender'}
+                                    <div class="gantt-tooltip">
+                                        <strong>${t.title || 'Tender'}</strong><br/>
+                                        Client: ${t.client_name || '-'}<br/>
+                                        Status: ${statusClass}<br/>
+                                        ${start.toLocaleDateString()} - ${end.toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                let monthsHtml = months.map(m => `
+                    <div class="month-label">${m.label}</div>
+                `).join('');
+
+                ganttHtml = `
+                    <div class="gantt-container">
+                        <div class="gantt-chart">
+                            <div class="gantt-header">
+                                <div class="gantt-label">Tender</div>
+                                <div class="gantt-timeline">${monthsHtml}</div>
+                            </div>
+                            ${barsHtml}
+                        </div>
+                    </div>
+                `;
+            } else {
+                ganttHtml = `
+                    <div class="gantt-empty">
+                        <div class="gantt-empty-icon">📊</div>
+                        <div>No tenders with dates to display</div>
+                        <div style="font-size:13px;color:#94a3b8;margin-top:4px;">Add tenders with start and end dates to see the timeline</div>
+                    </div>
+                `;
+            }
+
+            // ===== TENDERS TABLE =====
             const tendersByYear = {};
             filteredTenders.forEach(t => {
                 const year = t.submission_date ? new Date(t.submission_date).getFullYear() : 'No Date';
@@ -2119,10 +2376,27 @@
                 </td></tr>`;
             }
 
+            const isGanttExpanded = state.ganttExpanded !== undefined ? state.ganttExpanded : true;
+
             return `
                 <div class="page-header">
                     <div><h1>📋 Tenders</h1><div class="subtitle">Track submitted and awarded tenders</div></div>
                     <button class="btn btn-primary" id="addTenderBtn">➕ Add Tender</button>
+                </div>
+                
+                <!-- Gantt Chart - Collapsible -->
+                <div class="card gantt-card">
+                    <div class="collapsible-header" onclick="toggleGantt()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
+                        <h3>📊 Tender Timeline (Gantt Chart) 
+                            <span class="count-badge" style="font-weight:400;font-size:11px;text-transform:none;">
+                                ${ganttTenders.length} tenders
+                            </span>
+                        </h3>
+                        <span class="collapse-icon ${isGanttExpanded ? '' : 'collapsed'}">▼</span>
+                    </div>
+                    <div class="collapsible-content ${isGanttExpanded ? '' : 'hidden'}">
+                        ${ganttHtml}
+                    </div>
                 </div>
                 
                 <div class="filter-bar">
@@ -2326,7 +2600,6 @@
                 'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
             };
             
-            // Get all years from invoices
             const invoiceYears = [];
             state.invoices.forEach(i => {
                 if (i.month) {
@@ -2339,7 +2612,6 @@
             invoiceYears.sort();
             const selectedInvoiceYear = document.getElementById('invoiceYearFilter')?.value || 'all';
             
-            // Build monthly data for selected year
             const monthlyData = {};
             monthNames.forEach(m => {
                 monthlyData[m] = { budgeted: 0, actual: 0, totalBill: 0 };
@@ -2554,7 +2826,6 @@
             };
             const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
             
-            // Get all years from utilization data
             const utilYears = [];
             state.utilization.forEach(u => {
                 if (u.month) {
@@ -2564,9 +2835,6 @@
                     }
                 }
             });
-            utilYears.sort();
-            
-            // Also get years from invoices
             state.invoices.forEach(i => {
                 if (i.month) {
                     const year = i.month.split('-')[0];
@@ -2576,13 +2844,11 @@
                 }
             });
             utilYears.sort();
-            
             if (utilYears.length === 0) utilYears.push('2026');
             
             const selectedYear = document.getElementById('utilFilterYear')?.value || 'all';
             const selectedMonth = document.getElementById('utilFilterMonth')?.value || 'all';
             
-            // Filter utilization by year and month
             let filteredUtilization = [...state.utilization];
             if (selectedYear !== 'all') {
                 filteredUtilization = filteredUtilization.filter(u => u.month && u.month.startsWith(selectedYear));
@@ -2591,7 +2857,6 @@
                 filteredUtilization = filteredUtilization.filter(u => u.month === selectedMonth);
             }
             
-            // Calculate monthly summary for all data (not filtered)
             const allMonthlySummary = {};
             monthNames.forEach(m => {
                 allMonthlySummary[m] = { budget: 0, actual: 0 };
@@ -2608,7 +2873,6 @@
                 }
             });
             
-            // Add invoice data for actual days
             state.invoices.forEach(i => {
                 if (i.month && i.duration) {
                     const monthNum = i.month.split('-')[1];
@@ -2619,7 +2883,6 @@
                 }
             });
             
-            // Calculate annual totals
             let annualBudget = 0;
             let annualActual = 0;
             monthNames.forEach(m => {
@@ -2629,7 +2892,6 @@
             const annualVariance = annualActual - annualBudget;
             const annualVariancePercent = annualBudget > 0 ? ((annualVariance / annualBudget) * 100).toFixed(1) : 0;
             
-            // Calculate MTD
             const now = new Date();
             const currentMonthIndex = now.getMonth();
             let mtdBudget = 0;
@@ -2642,7 +2904,6 @@
             const mtdVariance = mtdActual - mtdBudget;
             const mtdVariancePercent = mtdBudget > 0 ? ((mtdVariance / mtdBudget) * 100).toFixed(1) : 0;
             
-            // Build collapsible years
             let yearCardsHtml = '';
             let totalOverallBudget = 0;
             let totalOverallActual = 0;
@@ -2650,7 +2911,6 @@
             const yearsToShow = selectedYear !== 'all' ? [selectedYear] : utilYears;
             
             yearsToShow.forEach(year => {
-                // Calculate monthly data for this year
                 const yearMonthSummary = {};
                 monthNames.forEach(m => {
                     yearMonthSummary[m] = { budget: 0, actual: 0 };
@@ -2725,7 +2985,6 @@
                 
                 const isExpanded = state.expandedYears[year] !== undefined ? state.expandedYears[year] : true;
                 
-                // Filter records for this year
                 let yearRecords = state.utilization.filter(u => u.month && u.month.startsWith(year));
                 if (selectedMonth !== 'all') {
                     yearRecords = yearRecords.filter(u => u.month === selectedMonth);
@@ -2861,17 +3120,14 @@
                 `;
             });
             
-            // Overall total
             const overallVariance = totalOverallActual - totalOverallBudget;
             const overallVariancePercent = totalOverallBudget > 0 ? ((overallVariance / totalOverallBudget) * 100).toFixed(1) : 0;
             const overallIsPositive = overallVariance >= 0;
 
-            // Build year filter options
             const yearFilterOptions = utilYears.map(y => 
                 `<option value="${y}" ${selectedYear === y ? 'selected' : ''}>${y}</option>`
             ).join('');
             
-            // Build month filter options from utilization data
             const utilMonths = [];
             state.utilization.forEach(u => {
                 if (u.month && !utilMonths.includes(u.month)) {
@@ -2889,7 +3145,6 @@
                     <button class="btn btn-primary" id="addUtilizationBtn">➕ Add Utilization</button>
                 </div>
                 
-                <!-- Overall KPI Summary -->
                 <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom:20px;">
                     <div class="stat-card" style="border-left: 4px solid #6366f1;">
                         <div class="stat-info" style="text-align:center;">
@@ -2933,7 +3188,6 @@
                     </div>
                 </div>
                 
-                <!-- Filter Bar -->
                 <div class="filter-bar">
                     <label>Year:</label>
                     <select id="utilFilterYear" onchange="renderUtilization(); attachAppEvents();">
@@ -2953,7 +3207,6 @@
                     </span>
                 </div>
                 
-                <!-- Collapsible Year Cards -->
                 ${yearCardsHtml}
             `;
         }
@@ -3022,7 +3275,6 @@
             const awardedTenders = tenderStatusMap['awarded'] || 0;
             const winRate = totalTenders > 0 ? ((awardedTenders / totalTenders) * 100).toFixed(1) : 0;
             
-            // Get years for reports filter
             const reportYears = [];
             state.invoices.forEach(i => {
                 if (i.month) {
@@ -3843,10 +4095,12 @@
         window.updateBudget = updateBudget;
         window.updateUtilBudget = updateUtilBudget;
         window.toggleYear = toggleYear;
+        window.toggleGantt = toggleGantt;
         window.renderCharts = renderCharts;
         window.switchTab = switchTab;
         window.renderUtilization = renderUtilization;
         window.renderInvoices = renderInvoices;
+        window.renderTenders = renderTenders;
 
         if (checkSession()) {
             loadAllData();
