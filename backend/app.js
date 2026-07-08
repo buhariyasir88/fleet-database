@@ -1,5 +1,3 @@
-// Force SQLite to use the correct binding
-process.env.SQLITE3_USE_SQLITE_JS = '1';
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
@@ -7,14 +5,21 @@ const fs = require('fs');
 const multer = require('multer');
 const path = require('path');
 
+// Force SQLite to use JavaScript version for Render
+process.env.SQLITE3_USE_SQLITE_JS = '1';
+
 console.log('✅ Starting DJ Group Chartering Database...');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ===== SERVE FRONTEND =====
+// Serve static files from the frontend folder
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // ===== CREATE UPLOADS FOLDER =====
 const uploadDir = path.join(__dirname, '../uploads');
@@ -52,7 +57,20 @@ const upload = multer({
 });
 
 // ===== DATABASE =====
-const db = new sqlite3.Database('./database/dj_chartering.db');
+// Use memory database if disk is not writable
+const dbPath = './database/dj_chartering.db';
+let db;
+
+try {
+    if (!fs.existsSync('./database')) {
+        fs.mkdirSync('./database', { recursive: true });
+    }
+    db = new sqlite3.Database(dbPath);
+    console.log('✅ Using disk database: ' + dbPath);
+} catch (err) {
+    console.log('⚠️ Cannot write to disk, using memory database');
+    db = new sqlite3.Database(':memory:');
+}
 
 db.serialize(function() {
     // Users
@@ -108,7 +126,7 @@ db.serialize(function() {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
-    // Tenders - FIXED with all columns
+    // Tenders
     db.run(`CREATE TABLE IF NOT EXISTS tenders (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         client_id INTEGER,
@@ -132,16 +150,32 @@ db.serialize(function() {
     db.run(`CREATE TABLE IF NOT EXISTS invoices (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         contract_id INTEGER,
+        invoice_number TEXT,
         vessel_name TEXT,
         charterer TEXT,
-        dcr TEXT,
+        dcr REAL,
         duration REAL,
+        mob_demob REAL,
         submission_date DATE,
         total_amount REAL,
         expected_payment_date DATE,
         month TEXT,
         budgeted_sale REAL,
         actual_bill REAL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )`);
+
+    // Vessel Utilization
+    db.run(`CREATE TABLE IF NOT EXISTS vessel_utilization (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        vessel_id INTEGER,
+        month TEXT,
+        year INTEGER,
+        budget_days INTEGER,
+        onhire_days INTEGER,
+        variance_days INTEGER,
+        variance_percent REAL,
+        remarks TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )`);
 
@@ -186,7 +220,6 @@ app.get('/api/clients', (req, res) => {
 
 app.post('/api/clients', (req, res) => {
     const { name, contact_person, email, phone, address } = req.body;
-    console.log('Adding client:', req.body);
     db.run(
         'INSERT INTO clients (name, contact_person, email, phone, address) VALUES (?, ?, ?, ?, ?)',
         [name, contact_person, email, phone, address],
@@ -241,14 +274,7 @@ app.get('/api/vessels', (req, res) => {
 });
 
 app.post('/api/vessels', (req, res) => {
-    console.log('📦 Received vessel data:', req.body);
-    
     const { name, imo, type, flag, year, grt, dwt, speed, total_seat } = req.body;
-    
-    if (!name || name.trim() === '') {
-        return res.status(400).json({ error: 'Vessel name is required' });
-    }
-    
     db.run(
         `INSERT INTO vessels (name, imo, type, flag, year, grt, dwt, speed, total_seat) 
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -304,15 +330,11 @@ app.delete('/api/vessels/:id', (req, res) => {
 
 // ===== VESSEL FILE UPLOADS =====
 app.post('/api/vessels/:id/upload-spec', upload.single('file'), (req, res) => {
-    console.log('Uploading spec for vessel:', req.params.id);
-    
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
-
     const id = req.params.id;
     const filePath = req.file.filename;
-
     db.run('UPDATE vessels SET spec_file = ? WHERE id = ?', [filePath, id], function(err) {
         if (err) {
             console.error('DB Error:', err);
@@ -325,15 +347,11 @@ app.post('/api/vessels/:id/upload-spec', upload.single('file'), (req, res) => {
 });
 
 app.post('/api/vessels/:id/upload-ga', upload.single('file'), (req, res) => {
-    console.log('Uploading GA for vessel:', req.params.id);
-
     if (!req.file) {
         return res.status(400).json({ error: 'No file uploaded' });
     }
-
     const id = req.params.id;
     const filePath = req.file.filename;
-
     db.run('UPDATE vessels SET ga_file = ? WHERE id = ?', [filePath, id], function(err) {
         if (err) {
             console.error('DB Error:', err);
@@ -427,8 +445,6 @@ app.post('/api/tenders', (req, res) => {
         submission_date, status, chances, remarks 
     } = req.body;
     
-    console.log('📦 Received tender data:', req.body);
-    
     const sql = `INSERT INTO tenders (
         client_id, title, dcr, start_date, end_date, duration, 
         proposed_vessel, proposed_amount, proposed_rate, 
@@ -468,8 +484,6 @@ app.put('/api/tenders/:id', (req, res) => {
         proposed_vessel, proposed_amount, proposed_rate, 
         submission_date, status, chances, remarks 
     } = req.body;
-    
-    console.log('📦 Updating tender:', req.params.id, req.body);
     
     const sql = `UPDATE tenders SET 
         client_id = ?, title = ?, dcr = ?, start_date = ?, end_date = ?, duration = ?, 
@@ -529,11 +543,11 @@ app.get('/api/invoices', (req, res) => {
 });
 
 app.post('/api/invoices', (req, res) => {
-    const { contract_id, vessel_name, charterer, dcr, duration, submission_date, total_amount, expected_payment_date, month, budgeted_sale, actual_bill } = req.body;
+    const { invoice_number, vessel_name, charterer, dcr, duration, mob_demob, total_amount, month, budgeted_sale, actual_bill } = req.body;
     db.run(
-        `INSERT INTO invoices (contract_id, vessel_name, charterer, dcr, duration, submission_date, total_amount, expected_payment_date, month, budgeted_sale, actual_bill) 
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-        [contract_id, vessel_name, charterer, dcr, duration, submission_date, total_amount, expected_payment_date, month, budgeted_sale, actual_bill],
+        `INSERT INTO invoices (invoice_number, vessel_name, charterer, dcr, duration, mob_demob, total_amount, month, budgeted_sale, actual_bill) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [invoice_number, vessel_name, charterer, dcr, duration, mob_demob, total_amount, month, budgeted_sale, actual_bill],
         function(err) {
             if (err) {
                 console.error('Error adding invoice:', err);
@@ -546,10 +560,10 @@ app.post('/api/invoices', (req, res) => {
 });
 
 app.put('/api/invoices/:id', (req, res) => {
-    const { contract_id, vessel_name, charterer, dcr, duration, submission_date, total_amount, expected_payment_date, month, budgeted_sale, actual_bill } = req.body;
+    const { invoice_number, vessel_name, charterer, dcr, duration, mob_demob, total_amount, month, budgeted_sale, actual_bill } = req.body;
     db.run(
-        `UPDATE invoices SET contract_id=?, vessel_name=?, charterer=?, dcr=?, duration=?, submission_date=?, total_amount=?, expected_payment_date=?, month=?, budgeted_sale=?, actual_bill=? WHERE id=?`,
-        [contract_id, vessel_name, charterer, dcr, duration, submission_date, total_amount, expected_payment_date, month, budgeted_sale, actual_bill, req.params.id],
+        `UPDATE invoices SET invoice_number=?, vessel_name=?, charterer=?, dcr=?, duration=?, mob_demob=?, total_amount=?, month=?, budgeted_sale=?, actual_bill=? WHERE id=?`,
+        [invoice_number, vessel_name, charterer, dcr, duration, mob_demob, total_amount, month, budgeted_sale, actual_bill, req.params.id],
         function(err) {
             if (err) {
                 console.error('Error updating invoice:', err);
@@ -565,6 +579,62 @@ app.delete('/api/invoices/:id', (req, res) => {
     db.run('DELETE FROM invoices WHERE id=?', [req.params.id], function(err) {
         if (err) {
             console.error('Error deleting invoice:', err);
+            res.status(500).json({ error: err.message });
+        } else {
+            res.json({ deleted: this.changes });
+        }
+    });
+});
+
+// ===== VESSEL UTILIZATION =====
+app.get('/api/utilization', (req, res) => {
+    db.all('SELECT * FROM vessel_utilization ORDER BY year DESC, month DESC', function(err, rows) {
+        if (err) {
+            console.error('Error fetching utilization:', err);
+            res.status(500).json({ error: err.message });
+        } else {
+            res.json(rows);
+        }
+    });
+});
+
+app.post('/api/utilization', (req, res) => {
+    const { vessel_id, month, year, budget_days, onhire_days, variance_days, variance_percent, remarks } = req.body;
+    db.run(
+        `INSERT INTO vessel_utilization (vessel_id, month, year, budget_days, onhire_days, variance_days, variance_percent, remarks) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [vessel_id, month, year, budget_days, onhire_days, variance_days, variance_percent, remarks],
+        function(err) {
+            if (err) {
+                console.error('Error adding utilization:', err);
+                res.status(500).json({ error: err.message });
+            } else {
+                res.json({ id: this.lastID });
+            }
+        }
+    );
+});
+
+app.put('/api/utilization/:id', (req, res) => {
+    const { vessel_id, month, year, budget_days, onhire_days, variance_days, variance_percent, remarks } = req.body;
+    db.run(
+        `UPDATE vessel_utilization SET vessel_id=?, month=?, year=?, budget_days=?, onhire_days=?, variance_days=?, variance_percent=?, remarks=? WHERE id=?`,
+        [vessel_id, month, year, budget_days, onhire_days, variance_days, variance_percent, remarks, req.params.id],
+        function(err) {
+            if (err) {
+                console.error('Error updating utilization:', err);
+                res.status(500).json({ error: err.message });
+            } else {
+                res.json({ updated: this.changes });
+            }
+        }
+    );
+});
+
+app.delete('/api/utilization/:id', (req, res) => {
+    db.run('DELETE FROM vessel_utilization WHERE id=?', [req.params.id], function(err) {
+        if (err) {
+            console.error('Error deleting utilization:', err);
             res.status(500).json({ error: err.message });
         } else {
             res.json({ deleted: this.changes });
@@ -600,6 +670,17 @@ app.get('/api/dashboard', (req, res) => {
         count++;
         if (count === 4) res.json(data);
     });
+});
+
+// ===== SERVE FRONTEND =====
+// This should be at the end, after all API routes
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+});
+
+// Catch-all route to serve index.html for any other requests
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // ===== START SERVER =====
