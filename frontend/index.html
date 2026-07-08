@@ -14,7 +14,6 @@
         ::-webkit-scrollbar-track { background: #e2e8f0; }
         ::-webkit-scrollbar-thumb { background: #4a5568; border-radius: 3px; }
 
-        /* ===== LOGIN ===== */
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -98,7 +97,6 @@
         .login-help p { color: rgba(255, 255, 255, 0.3); font-size: 13px; margin: 4px 0; }
         .login-help strong { color: rgba(255, 255, 255, 0.6); }
 
-        /* ===== APP LAYOUT ===== */
         .app { display: flex; min-height: 100vh; }
         .sidebar {
             width: 260px;
@@ -403,11 +401,9 @@
 <body>
     <div id="root"></div>
     <script>
-        // ===== CONFIGURATION =====
         const API_URL = 'https://fleet-database1.onrender.com';
         let chartInstances = {};
         
-        // ===== DEFAULT BUDGET =====
         const DEFAULT_BUDGET = {
             'Jan': 3318900,
             'Feb': 3350200,
@@ -438,7 +434,6 @@
             'Dec': 31
         };
         
-        // ===== STATE =====
         let state = {
             isLoggedIn: false,
             user: null,
@@ -461,7 +456,6 @@
             invoiceCounter: 0
         };
 
-        // ===== BUDGET FUNCTIONS =====
         function saveBudget() {
             localStorage.setItem('dj_annual_budget', JSON.stringify(state.annualBudget));
         }
@@ -486,7 +480,6 @@
             attachAppEvents();
         }
 
-        // ===== SESSION =====
         function checkSession() {
             const saved = localStorage.getItem('dj_user');
             if (saved) {
@@ -502,7 +495,6 @@
             return false;
         }
 
-        // ===== RENDER =====
         function render() {
             const root = document.getElementById('root');
             if (!state.isLoggedIn) {
@@ -518,7 +510,6 @@
             }
         }
 
-        // ===== LOGIN =====
         function renderLogin() {
             return `
                 <div class="login-container">
@@ -547,7 +538,6 @@
             `;
         }
 
-        // ===== MODAL FUNCTIONS =====
         function renderModal() {
             if (state.modalType === 'client') return renderClientModal();
             if (state.modalType === 'vessel') return renderVesselModal();
@@ -558,81 +548,7 @@
             return '';
         }
 
-        function renderUtilizationModal() {
-            const data = state.modalData || {};
-            const isEdit = state.editingId !== null;
-            
-            const vesselOptions = state.vessels.map(v => 
-                `<option value="${v.id}" ${data.vessel_id == v.id ? 'selected' : ''}>${v.name}</option>`
-            ).join('');
-            
-            return `
-                <div class="modal-overlay" id="modalOverlay">
-                    <div class="modal" style="max-width: 640px;">
-                        <div class="modal-header">
-                            <h2><span>📈</span> ${isEdit ? 'Edit' : 'Add New'} Vessel Utilization</h2>
-                            <button class="modal-close" id="modalCloseBtn">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label>Vessel <span class="required">*</span></label>
-                                <select id="utilizationVessel">
-                                    <option value="">Select Vessel...</option>
-                                    ${vesselOptions}
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Month <span class="required">*</span></label>
-                                <input type="month" id="utilizationMonth" value="${data.month || ''}" />
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Budgeted Days <span class="required">*</span></label>
-                                    <input type="number" id="utilizationBudget" placeholder="e.g. 30" value="${data.budget_days || ''}" oninput="updateUtilizationCalc()" />
-                                </div>
-                                <div class="form-group">
-                                    <label>Actual Onhire Days <span class="required">*</span></label>
-                                    <input type="number" id="utilizationActual" placeholder="e.g. 25" value="${data.onhire_days || ''}" oninput="updateUtilizationCalc()" />
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Remarks</label>
-                                <input type="text" id="utilizationRemarks" placeholder="Additional notes..." value="${data.remarks || ''}" />
-                            </div>
-                            
-                            <div class="calc-preview">
-                                <div class="calc-row">
-                                    <span class="label">Variance (Days)</span>
-                                    <span class="value" id="calcUtilVariance">0</span>
-                                </div>
-                                <div class="calc-row">
-                                    <span class="label">Variance (%)</span>
-                                    <span class="value" id="calcUtilVariancePercent">0%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
-                            <button class="btn btn-primary" id="modalSaveBtn">${isEdit ? '💾 Update Utilization' : '💾 Save Utilization'}</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        function updateUtilizationCalc() {
-            const budget = parseFloat(document.getElementById('utilizationBudget')?.value) || 0;
-            const actual = parseFloat(document.getElementById('utilizationActual')?.value) || 0;
-            const variance = actual - budget;
-            const variancePercent = budget > 0 ? ((variance / budget) * 100).toFixed(1) : 0;
-            
-            document.getElementById('calcUtilVariance').textContent = variance;
-            document.getElementById('calcUtilVariancePercent').textContent = variancePercent + '%';
-        }
-
+        // ===== INVOICE MODAL =====
         function renderInvoiceModal() {
             const data = state.modalData || {};
             const isEdit = state.editingId !== null;
@@ -645,7 +561,14 @@
                 `<option value="${c.name}" ${data.charterer === c.name ? 'selected' : ''}>${c.name}</option>`
             ).join('');
             
-            const invNumber = isEdit ? data.invoice_number : ('INV-' + String(state.invoices.length + 1).padStart(4, '0'));
+            // Calculate expected payment date (30 days from submission date)
+            let expectedDate = '';
+            if (data.submission_date) {
+                const subDate = new Date(data.submission_date);
+                const expDate = new Date(subDate);
+                expDate.setDate(expDate.getDate() + 30);
+                expectedDate = expDate.toISOString().split('T')[0];
+            }
             
             return `
                 <div class="modal-overlay" id="modalOverlay">
@@ -656,8 +579,8 @@
                         </div>
                         <div class="modal-body">
                             <div class="form-group">
-                                <label>Invoice Number</label>
-                                <input type="text" id="invoiceNumber" value="${invNumber}" readonly style="background:#f1f5f9;font-weight:600;color:#0f172a;" />
+                                <label>Invoice Number <span class="required">*</span></label>
+                                <input type="text" id="invoiceNumber" placeholder="e.g. INV-2026-001" value="${data.invoice_number || ''}" />
                             </div>
                             
                             <div class="form-group">
@@ -692,6 +615,17 @@
                                 <input type="number" id="invoiceMobDemob" placeholder="e.g. 5000" value="${data.mob_demob || ''}" oninput="updateInvoiceCalc()" />
                             </div>
                             
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Submission / Invoice Date <span class="required">*</span></label>
+                                    <input type="date" id="invoiceSubmissionDate" value="${data.submission_date || ''}" onchange="updateExpectedPayment()" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Expected Payment Date <span class="hint">(30 days term)</span></label>
+                                    <input type="date" id="invoiceExpectedDate" value="${data.expected_payment_date || expectedDate || ''}" readonly style="background:#f1f5f9;color:#0f172a;font-weight:600;" />
+                                </div>
+                            </div>
+                            
                             <div class="form-group">
                                 <label>Month</label>
                                 <input type="month" id="invoiceMonth" value="${data.month || ''}" />
@@ -703,7 +637,7 @@
                                     <input type="number" id="invoiceBudgeted" placeholder="e.g. 200000" value="${data.budgeted_sale || ''}" />
                                 </div>
                                 <div class="form-group">
-                                    <label>Actual Bill</label>
+                                    <label>Actual Bill <span class="hint">(leave empty to auto-fill with Total Bill)</span></label>
                                     <input type="number" id="invoiceActual" placeholder="Leave empty for auto-fill" value="${data.actual_bill || ''}" />
                                 </div>
                             </div>
@@ -732,11 +666,26 @@
             `;
         }
 
+        // ===== UPDATE EXPECTED PAYMENT DATE =====
+        function updateExpectedPayment() {
+            const subDate = document.getElementById('invoiceSubmissionDate')?.value;
+            if (subDate) {
+                const date = new Date(subDate);
+                const expDate = new Date(date);
+                expDate.setDate(expDate.getDate() + 30);
+                document.getElementById('invoiceExpectedDate').value = expDate.toISOString().split('T')[0];
+            } else {
+                document.getElementById('invoiceExpectedDate').value = '';
+            }
+        }
+
+        // ===== CALCULATE INVOICE TOTAL =====
         function updateInvoiceCalc() {
             const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
             const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
             const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
             const total = (dcr * days) + mobDemob;
+            
             document.getElementById('calcDcrDays').textContent = 'RM ' + (dcr * days).toLocaleString();
             document.getElementById('calcMobDemob').textContent = 'RM ' + mobDemob.toLocaleString();
             document.getElementById('calcTotalBill').textContent = 'RM ' + total.toLocaleString();
@@ -1046,6 +995,81 @@
             `;
         }
 
+        function renderUtilizationModal() {
+            const data = state.modalData || {};
+            const isEdit = state.editingId !== null;
+            
+            const vesselOptions = state.vessels.map(v => 
+                `<option value="${v.id}" ${data.vessel_id == v.id ? 'selected' : ''}>${v.name}</option>`
+            ).join('');
+            
+            return `
+                <div class="modal-overlay" id="modalOverlay">
+                    <div class="modal" style="max-width: 640px;">
+                        <div class="modal-header">
+                            <h2><span>📈</span> ${isEdit ? 'Edit' : 'Add New'} Vessel Utilization</h2>
+                            <button class="modal-close" id="modalCloseBtn">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Vessel <span class="required">*</span></label>
+                                <select id="utilizationVessel">
+                                    <option value="">Select Vessel...</option>
+                                    ${vesselOptions}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Month <span class="required">*</span></label>
+                                <input type="month" id="utilizationMonth" value="${data.month || ''}" />
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Budgeted Days <span class="required">*</span></label>
+                                    <input type="number" id="utilizationBudget" placeholder="e.g. 30" value="${data.budget_days || ''}" oninput="updateUtilizationCalc()" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Actual Onhire Days <span class="required">*</span></label>
+                                    <input type="number" id="utilizationActual" placeholder="e.g. 25" value="${data.onhire_days || ''}" oninput="updateUtilizationCalc()" />
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Remarks</label>
+                                <input type="text" id="utilizationRemarks" placeholder="Additional notes..." value="${data.remarks || ''}" />
+                            </div>
+                            
+                            <div class="calc-preview">
+                                <div class="calc-row">
+                                    <span class="label">Variance (Days)</span>
+                                    <span class="value" id="calcUtilVariance">0</span>
+                                </div>
+                                <div class="calc-row">
+                                    <span class="label">Variance (%)</span>
+                                    <span class="value" id="calcUtilVariancePercent">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                            <button class="btn btn-primary" id="modalSaveBtn">${isEdit ? '💾 Update Utilization' : '💾 Save Utilization'}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateUtilizationCalc() {
+            const budget = parseFloat(document.getElementById('utilizationBudget')?.value) || 0;
+            const actual = parseFloat(document.getElementById('utilizationActual')?.value) || 0;
+            const variance = actual - budget;
+            const variancePercent = budget > 0 ? ((variance / budget) * 100).toFixed(1) : 0;
+            
+            document.getElementById('calcUtilVariance').textContent = variance;
+            document.getElementById('calcUtilVariancePercent').textContent = variancePercent + '%';
+        }
+
         function updateContractCalc() {
             const dcr = parseFloat(document.getElementById('contractDcr')?.value) || 0;
             const duration = parseInt(document.getElementById('contractDuration')?.value) || 0;
@@ -1316,7 +1340,6 @@
             attachAppEvents();
         }
 
-        // ===== MODAL OPEN/CLOSE =====
         function openModal(type, data = {}, id = null) {
             state.showModal = true;
             state.modalType = type;
@@ -1348,7 +1371,74 @@
             attachAppEvents();
         }
 
-        // ===== SAVE FUNCTIONS =====
+        // ===== SAVE INVOICE =====
+        function saveInvoice() {
+            const invoiceNumber = document.getElementById('invoiceNumber')?.value?.trim();
+            const vessel = document.getElementById('invoiceVessel')?.value;
+            const charterer = document.getElementById('invoiceCharterer')?.value;
+            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
+            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
+            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
+            const submissionDate = document.getElementById('invoiceSubmissionDate')?.value || '';
+            const expectedPaymentDate = document.getElementById('invoiceExpectedDate')?.value || '';
+            const month = document.getElementById('invoiceMonth')?.value || '';
+            const budgetedSale = parseFloat(document.getElementById('invoiceBudgeted')?.value) || 0;
+            const actualBillInput = document.getElementById('invoiceActual')?.value;
+            
+            if (!invoiceNumber) { alert('⚠️ Invoice Number is required!'); return; }
+            if (!vessel) { alert('⚠️ Please select a Vessel!'); return; }
+            if (!charterer) { alert('⚠️ Please select a Charterer!'); return; }
+            if (!dcr || dcr <= 0) { alert('⚠️ Please enter a valid DCR!'); return; }
+            if (!days || days <= 0) { alert('⚠️ Please enter valid Total Days!'); return; }
+            if (!submissionDate) { alert('⚠️ Please select a Submission Date!'); return; }
+            
+            const totalBill = (dcr * days) + mobDemob;
+            
+            let actualBill = parseFloat(actualBillInput) || 0;
+            if (!actualBillInput || actualBillInput === '' || actualBill === 0) {
+                actualBill = totalBill;
+            }
+            
+            const data = {
+                invoice_number: invoiceNumber,
+                vessel_name: vessel,
+                charterer: charterer,
+                dcr: dcr,
+                duration: days,
+                mob_demob: mobDemob,
+                total_amount: totalBill,
+                submission_date: submissionDate,
+                expected_payment_date: expectedPaymentDate,
+                month: month,
+                budgeted_sale: budgetedSale,
+                actual_bill: actualBill,
+                contract_id: 0
+            };
+            
+            console.log('📦 Saving invoice data:', data);
+            
+            const btn = document.getElementById('modalSaveBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
+            
+            const isEdit = state.editingId !== null;
+            const promise = isEdit ? putData('invoices', state.editingId, data) : postData('invoices', data);
+            
+            promise.then(() => {
+                closeModal();
+                loadAllData();
+                alert(isEdit ? '✅ Invoice updated!\nTotal Bill: RM ' + totalBill.toLocaleString() : '✅ Invoice added!\nTotal Bill: RM ' + totalBill.toLocaleString());
+            }).catch((err) => {
+                console.error('Error saving invoice:', err);
+                alert('❌ Error saving invoice: ' + err.message);
+            }).finally(() => { 
+                if (btn) { 
+                    btn.disabled = false; 
+                    btn.textContent = isEdit ? '💾 Update Invoice' : '💾 Save Invoice'; 
+                } 
+            });
+        }
+
+        // ===== SAVE CLIENT =====
         function saveClient() {
             const name = document.getElementById('clientName')?.value?.trim();
             if (!name) { alert('⚠️ Client Name is required!'); return; }
@@ -1370,6 +1460,7 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Client' : '💾 Save Client'; } });
         }
 
+        // ===== SAVE VESSEL =====
         function saveVessel() {
             const name = document.getElementById('vesselName')?.value?.trim();
             if (!name) { alert('⚠️ Vessel Name is required!'); return; }
@@ -1395,6 +1486,7 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Vessel' : '💾 Save Vessel'; } });
         }
 
+        // ===== SAVE CONTRACT =====
         function saveContract() {
             const title = document.getElementById('contractTitle')?.value?.trim();
             const clientId = document.getElementById('contractClient')?.value;
@@ -1440,6 +1532,7 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Contract' : '💾 Save Contract'; } });
         }
 
+        // ===== SAVE TENDER =====
         function saveTender() {
             const title = document.getElementById('tenderTitle')?.value?.trim();
             const clientId = document.getElementById('tenderClient')?.value;
@@ -1491,59 +1584,7 @@
             });
         }
 
-        function saveInvoice() {
-            const vessel = document.getElementById('invoiceVessel')?.value;
-            const charterer = document.getElementById('invoiceCharterer')?.value;
-            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
-            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
-            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
-            const month = document.getElementById('invoiceMonth')?.value || '';
-            const budgetedSale = parseFloat(document.getElementById('invoiceBudgeted')?.value) || 0;
-            const actualBillInput = document.getElementById('invoiceActual')?.value;
-            const invoiceNumber = document.getElementById('invoiceNumber')?.value || ('INV-' + String(state.invoices.length + 1).padStart(4, '0'));
-            if (!vessel) { alert('⚠️ Please select a Vessel!'); return; }
-            if (!charterer) { alert('⚠️ Please select a Charterer!'); return; }
-            if (!dcr || dcr <= 0) { alert('⚠️ Please enter a valid DCR!'); return; }
-            if (!days || days <= 0) { alert('⚠️ Please enter valid Total Days!'); return; }
-            const totalBill = (dcr * days) + mobDemob;
-            let actualBill = parseFloat(actualBillInput) || 0;
-            if (!actualBillInput || actualBillInput === '' || actualBill === 0) {
-                actualBill = totalBill;
-            }
-            const data = {
-                invoice_number: invoiceNumber,
-                vessel_name: vessel,
-                charterer: charterer,
-                dcr: dcr,
-                duration: days,
-                mob_demob: mobDemob,
-                total_amount: totalBill,
-                month: month,
-                budgeted_sale: budgetedSale,
-                actual_bill: actualBill,
-                contract_id: 0,
-                submission_date: '',
-                expected_payment_date: ''
-            };
-            const btn = document.getElementById('modalSaveBtn');
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
-            const isEdit = state.editingId !== null;
-            const promise = isEdit ? putData('invoices', state.editingId, data) : postData('invoices', data);
-            promise.then(() => {
-                closeModal();
-                loadAllData();
-                alert(isEdit ? '✅ Invoice updated!\nTotal Bill: RM ' + totalBill.toLocaleString() : '✅ Invoice added!\nTotal Bill: RM ' + totalBill.toLocaleString());
-            }).catch((err) => {
-                console.error('Error saving invoice:', err);
-                alert('❌ Error saving invoice: ' + err.message);
-            }).finally(() => { 
-                if (btn) { 
-                    btn.disabled = false; 
-                    btn.textContent = isEdit ? '💾 Update Invoice' : '💾 Save Invoice'; 
-                } 
-            });
-        }
-
+        // ===== SAVE UTILIZATION =====
         function saveUtilization() {
             const vesselId = document.getElementById('utilizationVessel')?.value;
             const month = document.getElementById('utilizationMonth')?.value;
@@ -1589,13 +1630,21 @@
             document.getElementById('modalOverlay')?.addEventListener('click', (e) => {
                 if (e.target === e.currentTarget) closeModal();
             });
+            
+            // Invoice calculations
             document.getElementById('invoiceDcr')?.addEventListener('input', updateInvoiceCalc);
             document.getElementById('invoiceDays')?.addEventListener('input', updateInvoiceCalc);
             document.getElementById('invoiceMobDemob')?.addEventListener('input', updateInvoiceCalc);
+            document.getElementById('invoiceSubmissionDate')?.addEventListener('change', updateExpectedPayment);
+            
+            // Utilization calculation
             document.getElementById('utilizationBudget')?.addEventListener('input', updateUtilizationCalc);
             document.getElementById('utilizationActual')?.addEventListener('input', updateUtilizationCalc);
+            
+            // Tender calculation
             document.getElementById('tenderStart')?.addEventListener('change', updateTenderCalc);
             document.getElementById('tenderDuration')?.addEventListener('input', updateTenderCalc);
+            
             const saveBtn = document.getElementById('modalSaveBtn');
             if (saveBtn) {
                 if (state.modalType === 'client') saveBtn.addEventListener('click', saveClient);
@@ -1605,6 +1654,7 @@
                 else if (state.modalType === 'invoice') saveBtn.addEventListener('click', saveInvoice);
                 else if (state.modalType === 'utilization') saveBtn.addEventListener('click', saveUtilization);
             }
+            
             document.querySelectorAll('.modal input, .modal select, .modal textarea').forEach(input => {
                 input.addEventListener('keypress', (e) => {
                     if (e.key === 'Enter' && !e.target.tagName === 'TEXTAREA') {
@@ -1773,6 +1823,354 @@
             document.getElementById('addUtilizationBtn')?.addEventListener('click', () => openModal('utilization'));
         }
 
+        // ===== RENDER INVOICES =====
+        function renderInvoices() {
+            const months = [];
+            const vessels = [];
+            state.invoices.forEach(i => {
+                if (i.month && !months.includes(i.month)) {
+                    months.push(i.month);
+                }
+                if (i.vessel_name && !vessels.includes(i.vessel_name)) {
+                    vessels.push(i.vessel_name);
+                }
+            });
+            months.sort();
+            vessels.sort();
+
+            let filteredInvoices = [...state.invoices];
+            if (state.invoiceFilter.month !== 'all') {
+                filteredInvoices = filteredInvoices.filter(i => i.month === state.invoiceFilter.month);
+            }
+            if (state.invoiceFilter.vessel !== 'all') {
+                filteredInvoices = filteredInvoices.filter(i => i.vessel_name === state.invoiceFilter.vessel);
+            }
+
+            const groupBy = state.invoiceFilter.groupBy;
+            const groupedData = {};
+            filteredInvoices.forEach(i => {
+                let key = '';
+                if (groupBy === 'month') {
+                    key = i.month || 'No Month';
+                } else if (groupBy === 'vessel') {
+                    key = i.vessel_name || 'No Vessel';
+                } else {
+                    key = 'All';
+                }
+                if (!groupedData[key]) {
+                    groupedData[key] = [];
+                }
+                groupedData[key].push(i);
+            });
+
+            let sortedKeys = Object.keys(groupedData);
+            if (groupBy === 'month') {
+                sortedKeys.sort();
+            } else if (groupBy === 'vessel') {
+                sortedKeys.sort();
+            }
+
+            let grandTotalBill = 0;
+            let grandTotalBudgeted = 0;
+            let grandTotalActual = 0;
+
+            let tableRows = '';
+            sortedKeys.forEach(key => {
+                const items = groupedData[key];
+                let groupTotalBill = 0;
+                let groupTotalBudgeted = 0;
+                let groupTotalActual = 0;
+                
+                items.forEach(i => {
+                    const actual = i.actual_bill || i.total_amount || 0;
+                    groupTotalBill += i.total_amount || 0;
+                    groupTotalBudgeted += i.budgeted_sale || 0;
+                    groupTotalActual += actual;
+                });
+                
+                const groupVarianceValue = groupTotalActual - groupTotalBudgeted;
+                const groupVariancePercent = groupTotalBudgeted > 0 ? ((groupVarianceValue / groupTotalBudgeted) * 100).toFixed(1) : 0;
+                
+                grandTotalBill += groupTotalBill;
+                grandTotalBudgeted += groupTotalBudgeted;
+                grandTotalActual += groupTotalActual;
+                
+                tableRows += `
+                    <tr style="background:#f1f5f9;font-weight:700;">
+                        <td colspan="12" style="padding:8px 12px;font-size:13px;color:#0f172a;">
+                            ${groupBy === 'month' ? '📅' : '🚢'} ${key}
+                            <span style="font-weight:400;color:#94a3b8;font-size:12px;margin-left:12px;">
+                                ${items.length} invoice${items.length > 1 ? 's' : ''}
+                            </span>
+                            <span style="font-weight:400;color:#0f172a;font-size:12px;margin-left:12px;">
+                                Total: RM ${groupTotalBill.toLocaleString()}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+                
+                items.forEach(i => {
+                    const actual = i.actual_bill || i.total_amount || 0;
+                    const varianceValue = actual - (i.budgeted_sale || 0);
+                    const variancePercent = i.budgeted_sale > 0 ? ((varianceValue / i.budgeted_sale) * 100).toFixed(1) : 0;
+                    const isPositive = varianceValue >= 0;
+                    
+                    tableRows += `
+                    <tr>
+                        <td><strong>${i.invoice_number || '-'}</strong></td>
+                        <td><strong>${i.vessel_name || '-'}</strong></td>
+                        <td>${i.charterer || '-'}</td>
+                        <td>RM ${i.dcr ? Number(i.dcr).toLocaleString() : '-'}</td>
+                        <td>${i.duration || '-'}</td>
+                        <td>RM ${i.mob_demob ? Number(i.mob_demob).toLocaleString() : '0'}</td>
+                        <td>RM ${i.total_amount ? Number(i.total_amount).toLocaleString() : '-'}</td>
+                        <td>${i.submission_date || '-'}</td>
+                        <td>${i.expected_payment_date || '-'}</td>
+                        <td>RM ${i.budgeted_sale ? Number(i.budgeted_sale).toLocaleString() : '-'}</td>
+                        <td>RM ${actual ? Number(actual).toLocaleString() : '-'}</td>
+                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
+                            ${isPositive ? '+' : ''}RM ${varianceValue.toFixed(0)} (${variancePercent}%)
+                        </td>
+                        <td>
+                            <div class="action-group">
+                                <button class="btn btn-warning btn-sm" data-edit="invoices" data-id="${i.id}">✏️</button>
+                                <button class="btn btn-danger btn-sm" data-delete="invoices" data-id="${i.id}">🗑️</button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                });
+                
+                const groupIsPositive = groupVarianceValue >= 0;
+                tableRows += `
+                    <tr style="background:#f8fafc;font-weight:600;border-top:2px solid #e2e8f0;">
+                        <td colspan="8" style="text-align:right;padding:8px 12px;">Group Summary:</td>
+                        <td>RM ${groupTotalBill.toLocaleString()}</td>
+                        <td>RM ${groupTotalBudgeted.toLocaleString()}</td>
+                        <td>RM ${groupTotalActual.toLocaleString()}</td>
+                        <td class="${groupIsPositive ? 'variance-positive' : 'variance-negative'}">
+                            ${groupIsPositive ? '+' : ''}RM ${groupVarianceValue.toFixed(0)} (${groupVariancePercent}%)
+                        </td>
+                        <td></td>
+                    </tr>
+                `;
+            });
+
+            const grandVarianceValue = grandTotalActual - grandTotalBudgeted;
+            const grandVariancePercent = grandTotalBudgeted > 0 ? ((grandVarianceValue / grandTotalBudgeted) * 100).toFixed(1) : 0;
+            const grandIsPositive = grandVarianceValue >= 0;
+
+            if (filteredInvoices.length > 0) {
+                tableRows += `
+                    <tr class="grand-total-row">
+                        <td colspan="8" style="padding:10px 12px;text-align:right;font-weight:700;font-size:14px;">GRAND TOTAL</td>
+                        <td style="font-weight:700;font-size:14px;">RM ${grandTotalBill.toLocaleString()}</td>
+                        <td style="font-weight:700;font-size:14px;">RM ${grandTotalBudgeted.toLocaleString()}</td>
+                        <td style="font-weight:700;font-size:14px;">RM ${grandTotalActual.toLocaleString()}</td>
+                        <td style="font-weight:700;font-size:14px;" class="${grandIsPositive ? 'variance-positive' : 'variance-negative'}">
+                            ${grandIsPositive ? '+' : ''}RM ${grandVarianceValue.toFixed(0)} (${grandVariancePercent}%)
+                        </td>
+                        <td></td>
+                    </tr>
+                `;
+            }
+
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            const monthMap = {
+                'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
+                'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
+            };
+            
+            const monthlyData = {};
+            monthNames.forEach(m => {
+                monthlyData[m] = { budgeted: state.annualBudget[m] || 0, actual: 0, totalBill: 0 };
+            });
+            
+            state.invoices.forEach(i => {
+                if (i.month) {
+                    const monthNum = i.month.split('-')[1];
+                    const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
+                    if (monthName && monthlyData[monthName]) {
+                        monthlyData[monthName].budgeted = state.annualBudget[monthName] || 0;
+                        const actualAmount = i.actual_bill || i.total_amount || 0;
+                        monthlyData[monthName].actual += actualAmount;
+                        monthlyData[monthName].totalBill += i.total_amount || 0;
+                    }
+                }
+            });
+            
+            let cumulativeBudgeted = 0;
+            let cumulativeActual = 0;
+            let totalBudgetedAll = 0;
+            let totalActualAll = 0;
+            
+            const cumulativeRows = monthNames.map(month => {
+                const budgeted = monthlyData[month].budgeted || 0;
+                const actual = monthlyData[month].actual || 0;
+                cumulativeBudgeted += budgeted;
+                cumulativeActual += actual;
+                totalBudgetedAll += budgeted;
+                totalActualAll += actual;
+                const variance = actual - budgeted;
+                const variancePercent = budgeted > 0 ? ((variance / budgeted) * 100).toFixed(1) : 0;
+                const isPositive = variance >= 0;
+                
+                return `
+                    <tr>
+                        <td><strong>${month}</strong></td>
+                        <td>
+                            <input type="number" class="inline-edit" value="${budgeted}" 
+                                   onchange="updateBudget('${month}', this.value)" 
+                                   style="width:120px;text-align:right;" />
+                        </td>
+                        <td>RM ${actual.toLocaleString()}</td>
+                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
+                            ${isPositive ? '+' : ''}RM ${variance.toLocaleString()}
+                        </td>
+                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
+                            ${isPositive ? '+' : ''}${variancePercent}%
+                        </td>
+                        <td><strong>RM ${cumulativeBudgeted.toLocaleString()}</strong></td>
+                        <td><strong>RM ${cumulativeActual.toLocaleString()}</strong></td>
+                        <td class="${cumulativeActual >= cumulativeBudgeted ? 'variance-positive' : 'variance-negative'}">
+                            ${cumulativeActual >= cumulativeBudgeted ? '+' : ''}RM ${(cumulativeActual - cumulativeBudgeted).toLocaleString()}
+                        </td>
+                        <td class="${cumulativeActual >= cumulativeBudgeted ? 'variance-positive' : 'variance-negative'}">
+                            ${cumulativeBudgeted > 0 ? ((cumulativeActual - cumulativeBudgeted) / cumulativeBudgeted * 100).toFixed(1) : 0}%
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+
+            const totalVariance = totalActualAll - totalBudgetedAll;
+            const totalVariancePercent = totalBudgetedAll > 0 ? ((totalVariance / totalBudgetedAll) * 100).toFixed(1) : 0;
+            const totalIsPositive = totalVariance >= 0;
+
+            const monthFilterHtml = months.map(m => 
+                `<option value="${m}" ${state.invoiceFilter.month === m ? 'selected' : ''}>${m}</option>`
+            ).join('');
+            
+            const vesselFilterHtml = vessels.map(v => 
+                `<option value="${v}" ${state.invoiceFilter.vessel === v ? 'selected' : ''}>${v}</option>`
+            ).join('');
+
+            if (!state.invoices.length) {
+                tableRows = `<tr><td colspan="13" class="empty-state">
+                    <div class="empty-icon">💰</div>
+                    <div class="empty-title">No invoices yet</div>
+                    <div class="empty-sub">Click "Add Invoice" to get started</div>
+                </td></tr>`;
+            }
+
+            return `
+                <div class="page-header">
+                    <div><h1>💰 Invoices</h1><div class="subtitle">Track billing, budget vs actual, and cumulative sales</div></div>
+                    <button class="btn btn-primary" id="addInvoiceBtn">➕ Add Invoice</button>
+                </div>
+                
+                <div class="filter-bar">
+                    <label>Group By:</label>
+                    <select id="invoiceGroupBy">
+                        <option value="month" ${state.invoiceFilter.groupBy === 'month' ? 'selected' : ''}>Month</option>
+                        <option value="vessel" ${state.invoiceFilter.groupBy === 'vessel' ? 'selected' : ''}>Vessel</option>
+                    </select>
+                    
+                    <label>Month:</label>
+                    <select id="invoiceFilterMonth">
+                        <option value="all">All Months</option>
+                        ${monthFilterHtml}
+                    </select>
+                    
+                    <label>Vessel:</label>
+                    <select id="invoiceFilterVessel">
+                        <option value="all">All Vessels</option>
+                        ${vesselFilterHtml}
+                    </select>
+                    
+                    <button class="filter-clear" id="invoiceFilterClear">✕ Clear Filters</button>
+                    <span style="font-size:12px;color:#94a3b8;margin-left:auto;">
+                        Showing ${filteredInvoices.length} of ${state.invoices.length} invoices
+                    </span>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📊 Master Invoice Table</h3>
+                        <span class="count-badge">${filteredInvoices.length} Invoices</span>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Inv No.</th>
+                                    <th>Vessel</th>
+                                    <th>Charterer</th>
+                                    <th>DCR</th>
+                                    <th>Days</th>
+                                    <th>Mob/Demob</th>
+                                    <th>Total Bill</th>
+                                    <th>Sub Date</th>
+                                    <th>Payment Date</th>
+                                    <th>Budgeted</th>
+                                    <th>Actual</th>
+                                    <th>Variance</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>${tableRows}</tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h3>📈 Annual Budget Summary</h3>
+                        <span class="count-badge">Editable Budget</span>
+                        <span style="font-size:11px;color:#94a3b8;">Click on budget values to edit</span>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Month</th>
+                                    <th>Budgeted (RM)</th>
+                                    <th>Actual (RM)</th>
+                                    <th>Variance (RM)</th>
+                                    <th>Variance (%)</th>
+                                    <th>Cumulative Budgeted</th>
+                                    <th>Cumulative Actual</th>
+                                    <th>Cumulative Variance (RM)</th>
+                                    <th>Cumulative Variance (%)</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${cumulativeRows}
+                                <tr class="grand-total-row">
+                                    <td><strong>TOTAL</strong></td>
+                                    <td><strong>RM ${totalBudgetedAll.toLocaleString()}</strong></td>
+                                    <td><strong>RM ${totalActualAll.toLocaleString()}</strong></td>
+                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                        <strong>${totalIsPositive ? '+' : ''}RM ${totalVariance.toLocaleString()}</strong>
+                                    </td>
+                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                        <strong>${totalIsPositive ? '+' : ''}${totalVariancePercent}%</strong>
+                                    </td>
+                                    <td><strong>RM ${totalBudgetedAll.toLocaleString()}</strong></td>
+                                    <td><strong>RM ${totalActualAll.toLocaleString()}</strong></td>
+                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                        <strong>${totalIsPositive ? '+' : ''}RM ${totalVariance.toLocaleString()}</strong>
+                                    </td>
+                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
+                                        <strong>${totalIsPositive ? '+' : ''}${totalVariancePercent}%</strong>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
         // ===== RENDER TENDERS =====
         function renderTenders() {
             const years = [];
@@ -1922,350 +2320,6 @@
                                 </tr>
                             </thead>
                             <tbody>${tableRows}</tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        }
-
-        // ===== RENDER INVOICES =====
-        function renderInvoices() {
-            const months = [];
-            const vessels = [];
-            state.invoices.forEach(i => {
-                if (i.month && !months.includes(i.month)) {
-                    months.push(i.month);
-                }
-                if (i.vessel_name && !vessels.includes(i.vessel_name)) {
-                    vessels.push(i.vessel_name);
-                }
-            });
-            months.sort();
-            vessels.sort();
-
-            let filteredInvoices = [...state.invoices];
-            if (state.invoiceFilter.month !== 'all') {
-                filteredInvoices = filteredInvoices.filter(i => i.month === state.invoiceFilter.month);
-            }
-            if (state.invoiceFilter.vessel !== 'all') {
-                filteredInvoices = filteredInvoices.filter(i => i.vessel_name === state.invoiceFilter.vessel);
-            }
-
-            const groupBy = state.invoiceFilter.groupBy;
-            const groupedData = {};
-            filteredInvoices.forEach(i => {
-                let key = '';
-                if (groupBy === 'month') {
-                    key = i.month || 'No Month';
-                } else if (groupBy === 'vessel') {
-                    key = i.vessel_name || 'No Vessel';
-                } else {
-                    key = 'All';
-                }
-                if (!groupedData[key]) {
-                    groupedData[key] = [];
-                }
-                groupedData[key].push(i);
-            });
-
-            let sortedKeys = Object.keys(groupedData);
-            if (groupBy === 'month') {
-                sortedKeys.sort();
-            } else if (groupBy === 'vessel') {
-                sortedKeys.sort();
-            }
-
-            let grandTotalBill = 0;
-            let grandTotalBudgeted = 0;
-            let grandTotalActual = 0;
-
-            let tableRows = '';
-            sortedKeys.forEach(key => {
-                const items = groupedData[key];
-                let groupTotalBill = 0;
-                let groupTotalBudgeted = 0;
-                let groupTotalActual = 0;
-                
-                items.forEach(i => {
-                    const actual = i.actual_bill || i.total_amount || 0;
-                    groupTotalBill += i.total_amount || 0;
-                    groupTotalBudgeted += i.budgeted_sale || 0;
-                    groupTotalActual += actual;
-                });
-                
-                const groupVarianceValue = groupTotalActual - groupTotalBudgeted;
-                const groupVariancePercent = groupTotalBudgeted > 0 ? ((groupVarianceValue / groupTotalBudgeted) * 100).toFixed(1) : 0;
-                
-                grandTotalBill += groupTotalBill;
-                grandTotalBudgeted += groupTotalBudgeted;
-                grandTotalActual += groupTotalActual;
-                
-                tableRows += `
-                    <tr style="background:#f1f5f9;font-weight:700;">
-                        <td colspan="10" style="padding:8px 12px;font-size:13px;color:#0f172a;">
-                            ${groupBy === 'month' ? '📅' : '🚢'} ${key}
-                            <span style="font-weight:400;color:#94a3b8;font-size:12px;margin-left:12px;">
-                                ${items.length} invoice${items.length > 1 ? 's' : ''}
-                            </span>
-                            <span style="font-weight:400;color:#0f172a;font-size:12px;margin-left:12px;">
-                                Total: RM ${groupTotalBill.toLocaleString()}
-                            </span>
-                        </td>
-                    </tr>
-                `;
-                
-                items.forEach(i => {
-                    const actual = i.actual_bill || i.total_amount || 0;
-                    const varianceValue = actual - (i.budgeted_sale || 0);
-                    const variancePercent = i.budgeted_sale > 0 ? ((varianceValue / i.budgeted_sale) * 100).toFixed(1) : 0;
-                    const isPositive = varianceValue >= 0;
-                    
-                    tableRows += `
-                    <tr>
-                        <td><strong>${i.invoice_number || '-'}</strong></td>
-                        <td><strong>${i.vessel_name || '-'}</strong></td>
-                        <td>${i.charterer || '-'}</td>
-                        <td>RM ${i.dcr ? Number(i.dcr).toLocaleString() : '-'}</td>
-                        <td>${i.duration || '-'}</td>
-                        <td>RM ${i.mob_demob ? Number(i.mob_demob).toLocaleString() : '0'}</td>
-                        <td>RM ${i.total_amount ? Number(i.total_amount).toLocaleString() : '-'}</td>
-                        <td>RM ${i.budgeted_sale ? Number(i.budgeted_sale).toLocaleString() : '-'}</td>
-                        <td>RM ${actual ? Number(actual).toLocaleString() : '-'}</td>
-                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${isPositive ? '+' : ''}RM ${varianceValue.toFixed(0)} (${variancePercent}%)
-                        </td>
-                        <td>
-                            <div class="action-group">
-                                <button class="btn btn-warning btn-sm" data-edit="invoices" data-id="${i.id}">✏️</button>
-                                <button class="btn btn-danger btn-sm" data-delete="invoices" data-id="${i.id}">🗑️</button>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                });
-                
-                const groupIsPositive = groupVarianceValue >= 0;
-                tableRows += `
-                    <tr style="background:#f8fafc;font-weight:600;border-top:2px solid #e2e8f0;">
-                        <td colspan="6" style="text-align:right;padding:8px 12px;">Group Summary:</td>
-                        <td>RM ${groupTotalBill.toLocaleString()}</td>
-                        <td>RM ${groupTotalBudgeted.toLocaleString()}</td>
-                        <td>RM ${groupTotalActual.toLocaleString()}</td>
-                        <td class="${groupIsPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${groupIsPositive ? '+' : ''}RM ${groupVarianceValue.toFixed(0)} (${groupVariancePercent}%)
-                        </td>
-                        <td></td>
-                    </tr>
-                `;
-            });
-
-            const grandVarianceValue = grandTotalActual - grandTotalBudgeted;
-            const grandVariancePercent = grandTotalBudgeted > 0 ? ((grandVarianceValue / grandTotalBudgeted) * 100).toFixed(1) : 0;
-            const grandIsPositive = grandVarianceValue >= 0;
-
-            if (filteredInvoices.length > 0) {
-                tableRows += `
-                    <tr class="grand-total-row">
-                        <td colspan="6" style="padding:10px 12px;text-align:right;font-weight:700;font-size:14px;">GRAND TOTAL</td>
-                        <td style="font-weight:700;font-size:14px;">RM ${grandTotalBill.toLocaleString()}</td>
-                        <td style="font-weight:700;font-size:14px;">RM ${grandTotalBudgeted.toLocaleString()}</td>
-                        <td style="font-weight:700;font-size:14px;">RM ${grandTotalActual.toLocaleString()}</td>
-                        <td style="font-weight:700;font-size:14px;" class="${grandIsPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${grandIsPositive ? '+' : ''}RM ${grandVarianceValue.toFixed(0)} (${grandVariancePercent}%)
-                        </td>
-                        <td></td>
-                    </tr>
-                `;
-            }
-
-            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-            const monthMap = {
-                'Jan': '01', 'Feb': '02', 'Mar': '03', 'Apr': '04', 'May': '05', 'Jun': '06',
-                'Jul': '07', 'Aug': '08', 'Sep': '09', 'Oct': '10', 'Nov': '11', 'Dec': '12'
-            };
-            
-            const monthlyData = {};
-            monthNames.forEach(m => {
-                monthlyData[m] = { budgeted: state.annualBudget[m] || 0, actual: 0, totalBill: 0 };
-            });
-            
-            state.invoices.forEach(i => {
-                if (i.month) {
-                    const monthNum = i.month.split('-')[1];
-                    const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
-                    if (monthName && monthlyData[monthName]) {
-                        monthlyData[monthName].budgeted = state.annualBudget[monthName] || 0;
-                        const actualAmount = i.actual_bill || i.total_amount || 0;
-                        monthlyData[monthName].actual += actualAmount;
-                        monthlyData[monthName].totalBill += i.total_amount || 0;
-                    }
-                }
-            });
-            
-            let cumulativeBudgeted = 0;
-            let cumulativeActual = 0;
-            let totalBudgetedAll = 0;
-            let totalActualAll = 0;
-            
-            const cumulativeRows = monthNames.map(month => {
-                const budgeted = monthlyData[month].budgeted || 0;
-                const actual = monthlyData[month].actual || 0;
-                cumulativeBudgeted += budgeted;
-                cumulativeActual += actual;
-                totalBudgetedAll += budgeted;
-                totalActualAll += actual;
-                const variance = actual - budgeted;
-                const variancePercent = budgeted > 0 ? ((variance / budgeted) * 100).toFixed(1) : 0;
-                const isPositive = variance >= 0;
-                
-                return `
-                    <tr>
-                        <td><strong>${month}</strong></td>
-                        <td>
-                            <input type="number" class="inline-edit" value="${budgeted}" 
-                                   onchange="updateBudget('${month}', this.value)" 
-                                   style="width:120px;text-align:right;" />
-                        </td>
-                        <td>RM ${actual.toLocaleString()}</td>
-                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${isPositive ? '+' : ''}RM ${variance.toLocaleString()}
-                        </td>
-                        <td class="${isPositive ? 'variance-positive' : 'variance-negative'}">
-                            ${isPositive ? '+' : ''}${variancePercent}%
-                        </td>
-                        <td><strong>RM ${cumulativeBudgeted.toLocaleString()}</strong></td>
-                        <td><strong>RM ${cumulativeActual.toLocaleString()}</strong></td>
-                        <td class="${cumulativeActual >= cumulativeBudgeted ? 'variance-positive' : 'variance-negative'}">
-                            ${cumulativeActual >= cumulativeBudgeted ? '+' : ''}RM ${(cumulativeActual - cumulativeBudgeted).toLocaleString()}
-                        </td>
-                        <td class="${cumulativeActual >= cumulativeBudgeted ? 'variance-positive' : 'variance-negative'}">
-                            ${cumulativeBudgeted > 0 ? ((cumulativeActual - cumulativeBudgeted) / cumulativeBudgeted * 100).toFixed(1) : 0}%
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-
-            const totalVariance = totalActualAll - totalBudgetedAll;
-            const totalVariancePercent = totalBudgetedAll > 0 ? ((totalVariance / totalBudgetedAll) * 100).toFixed(1) : 0;
-            const totalIsPositive = totalVariance >= 0;
-
-            const monthFilterHtml = months.map(m => 
-                `<option value="${m}" ${state.invoiceFilter.month === m ? 'selected' : ''}>${m}</option>`
-            ).join('');
-            
-            const vesselFilterHtml = vessels.map(v => 
-                `<option value="${v}" ${state.invoiceFilter.vessel === v ? 'selected' : ''}>${v}</option>`
-            ).join('');
-
-            if (!state.invoices.length) {
-                tableRows = `<tr><td colspan="11" class="empty-state">
-                    <div class="empty-icon">💰</div>
-                    <div class="empty-title">No invoices yet</div>
-                    <div class="empty-sub">Click "Add Invoice" to get started</div>
-                </td></tr>`;
-            }
-
-            return `
-                <div class="page-header">
-                    <div><h1>💰 Invoices</h1><div class="subtitle">Track billing, budget vs actual, and cumulative sales</div></div>
-                    <button class="btn btn-primary" id="addInvoiceBtn">➕ Add Invoice</button>
-                </div>
-                
-                <div class="filter-bar">
-                    <label>Group By:</label>
-                    <select id="invoiceGroupBy">
-                        <option value="month" ${state.invoiceFilter.groupBy === 'month' ? 'selected' : ''}>Month</option>
-                        <option value="vessel" ${state.invoiceFilter.groupBy === 'vessel' ? 'selected' : ''}>Vessel</option>
-                    </select>
-                    
-                    <label>Month:</label>
-                    <select id="invoiceFilterMonth">
-                        <option value="all">All Months</option>
-                        ${monthFilterHtml}
-                    </select>
-                    
-                    <label>Vessel:</label>
-                    <select id="invoiceFilterVessel">
-                        <option value="all">All Vessels</option>
-                        ${vesselFilterHtml}
-                    </select>
-                    
-                    <button class="filter-clear" id="invoiceFilterClear">✕ Clear Filters</button>
-                    <span style="font-size:12px;color:#94a3b8;margin-left:auto;">
-                        Showing ${filteredInvoices.length} of ${state.invoices.length} invoices
-                    </span>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📊 Master Invoice Table</h3>
-                        <span class="count-badge">${filteredInvoices.length} Invoices</span>
-                    </div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Inv No.</th>
-                                    <th>Vessel</th>
-                                    <th>Charterer</th>
-                                    <th>DCR</th>
-                                    <th>Days</th>
-                                    <th>Mob/Demob</th>
-                                    <th>Total Bill</th>
-                                    <th>Budgeted</th>
-                                    <th>Actual</th>
-                                    <th>Variance</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody>${tableRows}</tbody>
-                        </table>
-                    </div>
-                </div>
-                
-                <div class="card">
-                    <div class="card-header">
-                        <h3>📈 Annual Budget Summary</h3>
-                        <span class="count-badge">Editable Budget</span>
-                        <span style="font-size:11px;color:#94a3b8;">Click on budget values to edit</span>
-                    </div>
-                    <div class="table-container">
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Month</th>
-                                    <th>Budgeted (RM)</th>
-                                    <th>Actual (RM)</th>
-                                    <th>Variance (RM)</th>
-                                    <th>Variance (%)</th>
-                                    <th>Cumulative Budgeted</th>
-                                    <th>Cumulative Actual</th>
-                                    <th>Cumulative Variance (RM)</th>
-                                    <th>Cumulative Variance (%)</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${cumulativeRows}
-                                <tr class="grand-total-row">
-                                    <td><strong>TOTAL</strong></td>
-                                    <td><strong>RM ${totalBudgetedAll.toLocaleString()}</strong></td>
-                                    <td><strong>RM ${totalActualAll.toLocaleString()}</strong></td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}RM ${totalVariance.toLocaleString()}</strong>
-                                    </td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}${totalVariancePercent}%</strong>
-                                    </td>
-                                    <td><strong>RM ${totalBudgetedAll.toLocaleString()}</strong></td>
-                                    <td><strong>RM ${totalActualAll.toLocaleString()}</strong></td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}RM ${totalVariance.toLocaleString()}</strong>
-                                    </td>
-                                    <td class="${totalIsPositive ? 'variance-positive' : 'variance-negative'}">
-                                        <strong>${totalIsPositive ? '+' : ''}${totalVariancePercent}%</strong>
-                                    </td>
-                                </tr>
-                            </tbody>
                         </table>
                     </div>
                 </div>
@@ -2473,7 +2527,6 @@
 
         // ===== RENDER REPORTS =====
         function renderReports() {
-            // Calculate revenue by vessel
             const vesselRevenue = {};
             const vesselDays = {};
             state.invoices.forEach(i => {
@@ -2482,7 +2535,6 @@
                 vesselDays[vessel] = (vesselDays[vessel] || 0) + (i.duration || 0);
             });
             
-            // Calculate revenue by client
             const clientRevenue = {};
             const clientInvoices = {};
             state.invoices.forEach(i => {
@@ -2497,7 +2549,6 @@
             const totalRevenue = Object.values(vesselRevenue).reduce((a, b) => a + b, 0);
             const totalClientRevenue = Object.values(clientRevenue).reduce((a, b) => a + b, 0);
             
-            // Vessel table
             let vesselTableRows = sortedVessels.map(([vessel, revenue]) => {
                 const days = vesselDays[vessel] || 0;
                 const avgRate = days > 0 ? revenue / days : 0;
@@ -2513,7 +2564,6 @@
                 `;
             }).join('');
             
-            // Client table
             let clientTableRows = sortedClients.map(([client, revenue]) => {
                 const invCount = clientInvoices[client] || 0;
                 const avgInvoice = invCount > 0 ? revenue / invCount : 0;
@@ -2529,9 +2579,7 @@
                 `;
             }).join('');
             
-            // Contract stats
             const activeContracts = state.contracts.filter(c => c.status === 'active' || !c.status).length;
-            const completedContracts = state.contracts.filter(c => c.status === 'completed').length;
             const totalTenders = state.tenders.length;
             const tenderStatusMap = {};
             state.tenders.forEach(t => {
@@ -2553,7 +2601,6 @@
                     </div>
                 </div>
                 
-                <!-- KPI Cards -->
                 <div class="dashboard-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));">
                     <div class="stat-card" style="border-left: 4px solid #6366f1;">
                         <div class="stat-info" style="text-align:center;">
@@ -2593,7 +2640,6 @@
                     </div>
                 </div>
                 
-                <!-- Doughnut Charts -->
                 <div class="chart-grid">
                     <div class="chart-card">
                         <div class="chart-title">🚢 Revenue by Vessel</div>
@@ -2620,7 +2666,6 @@
                     </div>
                 </div>
                 
-                <!-- Summary Tables -->
                 <div class="chart-grid" style="grid-template-columns: 1fr 1fr;">
                     <div class="card">
                         <div class="card-header">
@@ -2687,7 +2732,6 @@
                     </div>
                 </div>
                 
-                <!-- More Charts -->
                 <div class="chart-grid">
                     <div class="chart-card">
                         <div class="chart-title">📈 Monthly Revenue Trend</div>
@@ -2733,7 +2777,6 @@
 
         // ===== CHART FUNCTIONS =====
         function renderCharts() {
-            // Destroy existing charts
             Object.keys(chartInstances).forEach(key => {
                 if (chartInstances[key]) {
                     chartInstances[key].destroy();
@@ -2747,7 +2790,7 @@
                 '#84cc16', '#6b7280', '#e11d48', '#7c3aed', '#0891b2'
             ];
             
-            // 1. Revenue by Vessel (Doughnut)
+            // 1. Revenue by Vessel
             const vesselCtx = document.getElementById('vesselRevenueChart');
             if (vesselCtx) {
                 const vesselRevenue = {};
@@ -2798,7 +2841,7 @@
                 });
             }
             
-            // 2. Revenue by Client (Doughnut)
+            // 2. Revenue by Client
             const clientCtx = document.getElementById('clientRevenueChart');
             if (clientCtx) {
                 const clientRevenue = {};
@@ -2849,7 +2892,7 @@
                 });
             }
             
-            // 3. Monthly Revenue Trend (Line)
+            // 3. Monthly Revenue Trend
             const trendCtx = document.getElementById('revenueTrendChart');
             if (trendCtx) {
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -2911,7 +2954,7 @@
                 });
             }
             
-            // 4. Budget vs Actual (Bar)
+            // 4. Budget vs Actual
             const budgetCtx = document.getElementById('budgetVsActualChart');
             if (budgetCtx) {
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -2973,7 +3016,7 @@
                 });
             }
             
-            // 5. Contract Status (Doughnut)
+            // 5. Contract Status
             const contractCtx = document.getElementById('contractStatusChart');
             if (contractCtx) {
                 const active = state.contracts.filter(c => c.status === 'active' || !c.status).length;
@@ -3000,7 +3043,7 @@
                 });
             }
             
-            // 6. Tender Status (Doughnut)
+            // 6. Tender Status
             const tenderCtx = document.getElementById('tenderStatusChart');
             if (tenderCtx) {
                 const statusMap = {};
@@ -3051,7 +3094,7 @@
                 });
             }
             
-            // 7. Vessel Utilization (Bar)
+            // 7. Vessel Utilization
             const utilCtx = document.getElementById('utilizationChart');
             if (utilCtx) {
                 const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -3349,6 +3392,7 @@
         window.updateTenderCalc = updateTenderCalc;
         window.updateInvoiceCalc = updateInvoiceCalc;
         window.updateUtilizationCalc = updateUtilizationCalc;
+        window.updateExpectedPayment = updateExpectedPayment;
         window.updateBudget = updateBudget;
         window.updateUtilizationBudget = updateUtilizationBudget;
         window.renderCharts = renderCharts;
