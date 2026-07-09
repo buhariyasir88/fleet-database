@@ -18,8 +18,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ===== SERVE FRONTEND =====
+// Get the current directory
+const currentDir = __dirname;
+console.log('📁 Current directory:', currentDir);
+
 // Serve static files from the frontend folder
-app.use(express.static(path.join(__dirname, '../frontend')));
+app.use(express.static(path.join(currentDir, '../frontend')));
+
+// Also try serving from the same directory (if frontend is in backend folder)
+app.use(express.static(path.join(currentDir, 'frontend')));
 
 // ===== CREATE UPLOADS FOLDER =====
 const uploadDir = path.join(__dirname, '../uploads');
@@ -57,7 +64,6 @@ const upload = multer({
 });
 
 // ===== DATABASE =====
-// Use memory database if disk is not writable
 const dbPath = './database/dj_chartering.db';
 let db;
 
@@ -673,14 +679,54 @@ app.get('/api/dashboard', (req, res) => {
 });
 
 // ===== SERVE FRONTEND =====
-// This should be at the end, after all API routes
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
-});
+// Try to find the frontend index.html
+const frontendPaths = [
+    path.join(__dirname, '../frontend/index.html'),
+    path.join(__dirname, 'frontend/index.html'),
+    path.join(process.cwd(), 'frontend/index.html'),
+    path.join(__dirname, '../../frontend/index.html')
+];
 
-// Catch-all route to serve index.html for any other requests
+let frontendPath = null;
+for (const p of frontendPaths) {
+    if (fs.existsSync(p)) {
+        frontendPath = p;
+        console.log('✅ Found frontend at:', p);
+        break;
+    }
+}
+
+if (!frontendPath) {
+    console.log('⚠️ Frontend index.html not found! Creating basic HTML...');
+    // Create a basic HTML response
+    app.get('/', (req, res) => {
+        res.send(`
+            <!DOCTYPE html>
+            <html>
+            <head><title>Fleet Database</title></head>
+            <body>
+                <h1>🚢 DJ Group Chartering Database</h1>
+                <p>Frontend not found. Please check your deployment.</p>
+                <p>API is working! <a href="/api/clients">Test API</a></p>
+            </body>
+            </html>
+        `);
+    });
+} else {
+    // Serve the frontend
+    app.use(express.static(path.dirname(frontendPath)));
+    app.get('/', (req, res) => {
+        res.sendFile(frontendPath);
+    });
+}
+
+// Catch-all route to serve index.html
 app.get('*', (req, res) => {
-    res.sendFile(path.join(__dirname, '../frontend/index.html'));
+    if (frontendPath && fs.existsSync(frontendPath)) {
+        res.sendFile(frontendPath);
+    } else {
+        res.status(404).send('Page not found. API is available at /api/');
+    }
 });
 
 // ===== START SERVER =====
@@ -690,7 +736,7 @@ app.listen(PORT, function() {
     console.log('  🚀 DJ GROUP CHARTERING DATABASE');
     console.log('========================================');
     console.log('  Server: http://localhost:' + PORT);
-    console.log('  Database: dj_chartering.db');
+    console.log('  Frontend path: ' + frontendPath);
     console.log('  Login: admin / admin123');
     console.log('========================================');
     console.log('');

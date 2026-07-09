@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: fleet-backend
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node backend/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+
+  - type: static
+    name: fleet-frontend
+    runtime: static
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/build
