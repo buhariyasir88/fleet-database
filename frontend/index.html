@@ -384,7 +384,6 @@
             height: 250px;
         }
 
-        /* ===== COLLAPSIBLE ===== */
         .collapsible-year {
             border: 1px solid #e2e8f0;
             border-radius: 12px;
@@ -450,7 +449,6 @@
             padding: 16px 20px 20px;
         }
 
-        /* ===== GANTT CHART ===== */
         .gantt-container {
             overflow-x: auto;
             padding: 16px 0;
@@ -570,18 +568,10 @@
             z-index: 10;
             font-weight: 400;
         }
-        .gantt-bar:hover .gantt-tooltip {
-            display: block;
-        }
-        .gantt-empty {
-            text-align: center;
-            padding: 30px;
-            color: #94a3b8;
-        }
-        .gantt-empty .gantt-empty-icon {
-            font-size: 32px;
-            margin-bottom: 8px;
-        }
+        .gantt-bar:hover .gantt-tooltip { display: block; }
+        .gantt-empty { text-align: center; padding: 30px; color: #94a3b8; }
+        .gantt-empty .gantt-empty-icon { font-size: 32px; margin-bottom: 8px; }
+
         .gantt-card .collapsible-header {
             cursor: pointer;
             user-select: none;
@@ -590,23 +580,16 @@
             align-items: center;
             padding: 8px 0;
         }
-        .gantt-card .collapsible-header:hover {
-            opacity: 0.8;
-        }
-        .gantt-card .collapsible-header .collapse-icon {
-            transition: transform 0.3s;
-        }
-        .gantt-card .collapsible-header .collapse-icon.collapsed {
-            transform: rotate(-90deg);
-        }
+        .gantt-card .collapsible-header:hover { opacity: 0.8; }
+        .gantt-card .collapsible-header .collapse-icon { transition: transform 0.3s; }
+        .gantt-card .collapsible-header .collapse-icon.collapsed { transform: rotate(-90deg); }
         .gantt-card .collapsible-content {
             overflow: hidden;
             transition: max-height 0.3s ease;
             max-height: 5000px;
         }
-        .gantt-card .collapsible-content.hidden {
-            max-height: 0;
-        }
+        .gantt-card .collapsible-content.hidden { max-height: 0; }
+
         .kpi-mini-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -746,7 +729,7 @@
             utilizationBudgets: JSON.parse(localStorage.getItem('dj_utilization_budgets')) || DEFAULT_UTILIZATION_BUDGETS,
             invoiceCounter: 0,
             expandedYears: JSON.parse(localStorage.getItem('dj_expanded_years')) || {},
-            ganttExpanded: JSON.parse(localStorage.getItem('dj_gantt_expanded')) || true
+            ganttExpanded: JSON.parse(localStorage.getItem('dj_gantt_expanded')) !== undefined ? JSON.parse(localStorage.getItem('dj_gantt_expanded')) : true
         };
 
         // ===== BUDGET FUNCTIONS =====
@@ -876,71 +859,7 @@
             return '';
         }
 
-        function renderUtilizationModal() {
-            const data = state.modalData || {};
-            const isEdit = state.editingId !== null;
-            
-            const vesselOptions = state.vessels.map(v => 
-                `<option value="${v.id}" ${data.vessel_id == v.id ? 'selected' : ''}>${v.name}</option>`
-            ).join('');
-            
-            return `
-                <div class="modal-overlay" id="modalOverlay">
-                    <div class="modal" style="max-width: 640px;">
-                        <div class="modal-header">
-                            <h2><span>📈</span> ${isEdit ? 'Edit' : 'Add New'} Vessel Utilization</h2>
-                            <button class="modal-close" id="modalCloseBtn">✕</button>
-                        </div>
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label>Vessel <span class="required">*</span></label>
-                                <select id="utilizationVessel">
-                                    <option value="">Select Vessel...</option>
-                                    ${vesselOptions}
-                                </select>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Month <span class="required">*</span></label>
-                                <input type="month" id="utilizationMonth" value="${data.month || ''}" />
-                            </div>
-                            
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Budgeted Days <span class="required">*</span></label>
-                                    <input type="number" id="utilizationBudget" placeholder="e.g. 30" value="${data.budget_days || ''}" oninput="updateUtilizationCalc()" />
-                                </div>
-                                <div class="form-group">
-                                    <label>Actual Onhire Days <span class="required">*</span></label>
-                                    <input type="number" id="utilizationActual" placeholder="e.g. 25" value="${data.onhire_days || ''}" oninput="updateUtilizationCalc()" />
-                                </div>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label>Remarks</label>
-                                <input type="text" id="utilizationRemarks" placeholder="Additional notes..." value="${data.remarks || ''}" />
-                            </div>
-                            
-                            <div class="calc-preview">
-                                <div class="calc-row">
-                                    <span class="label">Variance (Days)</span>
-                                    <span class="value" id="calcUtilVariance">0</span>
-                                </div>
-                                <div class="calc-row">
-                                    <span class="label">Variance (%)</span>
-                                    <span class="value" id="calcUtilVariancePercent">0%</span>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer">
-                            <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
-                            <button class="btn btn-primary" id="modalSaveBtn">${isEdit ? '💾 Update Utilization' : '💾 Save Utilization'}</button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
+        // ===== INVOICE MODAL =====
         function renderInvoiceModal() {
             const data = state.modalData || {};
             const isEdit = state.editingId !== null;
@@ -1051,6 +970,71 @@
                         <div class="modal-footer">
                             <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
                             <button class="btn btn-primary" id="modalSaveBtn">${isEdit ? '💾 Update Invoice' : '💾 Save Invoice'}</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderUtilizationModal() {
+            const data = state.modalData || {};
+            const isEdit = state.editingId !== null;
+            
+            const vesselOptions = state.vessels.map(v => 
+                `<option value="${v.id}" ${data.vessel_id == v.id ? 'selected' : ''}>${v.name}</option>`
+            ).join('');
+            
+            return `
+                <div class="modal-overlay" id="modalOverlay">
+                    <div class="modal" style="max-width: 640px;">
+                        <div class="modal-header">
+                            <h2><span>📈</span> ${isEdit ? 'Edit' : 'Add New'} Vessel Utilization</h2>
+                            <button class="modal-close" id="modalCloseBtn">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-group">
+                                <label>Vessel <span class="required">*</span></label>
+                                <select id="utilizationVessel">
+                                    <option value="">Select Vessel...</option>
+                                    ${vesselOptions}
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Month <span class="required">*</span></label>
+                                <input type="month" id="utilizationMonth" value="${data.month || ''}" />
+                            </div>
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Budgeted Days <span class="required">*</span></label>
+                                    <input type="number" id="utilizationBudget" placeholder="e.g. 30" value="${data.budget_days || ''}" oninput="updateUtilizationCalc()" />
+                                </div>
+                                <div class="form-group">
+                                    <label>Actual Onhire Days <span class="required">*</span></label>
+                                    <input type="number" id="utilizationActual" placeholder="e.g. 25" value="${data.onhire_days || ''}" oninput="updateUtilizationCalc()" />
+                                </div>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label>Remarks</label>
+                                <input type="text" id="utilizationRemarks" placeholder="Additional notes..." value="${data.remarks || ''}" />
+                            </div>
+                            
+                            <div class="calc-preview">
+                                <div class="calc-row">
+                                    <span class="label">Variance (Days)</span>
+                                    <span class="value" id="calcUtilVariance">0</span>
+                                </div>
+                                <div class="calc-row">
+                                    <span class="label">Variance (%)</span>
+                                    <span class="value" id="calcUtilVariancePercent">0%</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button class="btn btn-secondary" id="modalCancelBtn">Cancel</button>
+                            <button class="btn btn-primary" id="modalSaveBtn">${isEdit ? '💾 Update Utilization' : '💾 Save Utilization'}</button>
                         </div>
                     </div>
                 </div>
@@ -1695,7 +1679,81 @@
             attachAppEvents();
         }
 
-        // ===== SAVE FUNCTIONS =====
+        // ===== SAVE INVOICE =====
+        function saveInvoice() {
+            const invoiceNumber = document.getElementById('invoiceNumber')?.value?.trim();
+            const vessel = document.getElementById('invoiceVessel')?.value;
+            const charterer = document.getElementById('invoiceCharterer')?.value;
+            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
+            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
+            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
+            const submissionDate = document.getElementById('invoiceSubmissionDate')?.value || '';
+            const expectedPaymentDate = document.getElementById('invoiceExpectedDate')?.value || '';
+            const month = document.getElementById('invoiceMonth')?.value || '';
+            const budgetedSale = parseFloat(document.getElementById('invoiceBudgeted')?.value) || 0;
+            const actualBillInput = document.getElementById('invoiceActual')?.value;
+            
+            if (!invoiceNumber) { alert('⚠️ Invoice Number is required!'); return; }
+            if (!vessel) { alert('⚠️ Please select a Vessel!'); return; }
+            if (!charterer) { alert('⚠️ Please select a Charterer!'); return; }
+            if (!dcr || dcr <= 0) { alert('⚠️ Please enter a valid DCR!'); return; }
+            if (!days || days <= 0) { alert('⚠️ Please enter valid Total Days!'); return; }
+            if (!submissionDate) { alert('⚠️ Please select a Submission Date!'); return; }
+            
+            const totalBill = (dcr * days) + mobDemob;
+            
+            let actualBill = parseFloat(actualBillInput) || 0;
+            if (!actualBillInput || actualBillInput === '' || actualBill === 0) {
+                actualBill = totalBill;
+            }
+            
+            // Format month from submission date if not provided
+            let formattedMonth = month;
+            if (!formattedMonth && submissionDate) {
+                formattedMonth = submissionDate.substring(0, 7);
+            }
+            
+            const data = {
+                invoice_number: invoiceNumber,
+                vessel_name: vessel,
+                charterer: charterer,
+                dcr: dcr,
+                duration: days,
+                mob_demob: mobDemob,
+                total_amount: totalBill,
+                submission_date: submissionDate,
+                expected_payment_date: expectedPaymentDate,
+                month: formattedMonth,
+                budgeted_sale: budgetedSale,
+                actual_bill: actualBill,
+                contract_id: 0
+            };
+            
+            console.log('📦 Saving invoice data:', data);
+            
+            const btn = document.getElementById('modalSaveBtn');
+            if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
+            
+            const isEdit = state.editingId !== null;
+            const promise = isEdit ? putData('invoices', state.editingId, data) : postData('invoices', data);
+            
+            promise.then((result) => {
+                console.log('✅ Server response:', result);
+                closeModal();
+                loadAllData();
+                alert(isEdit ? '✅ Invoice updated!\nTotal Bill: RM ' + totalBill.toLocaleString() : '✅ Invoice added!\nTotal Bill: RM ' + totalBill.toLocaleString());
+            }).catch((err) => {
+                console.error('❌ Error saving invoice:', err);
+                alert('❌ Error saving invoice: ' + err.message);
+            }).finally(() => { 
+                if (btn) { 
+                    btn.disabled = false; 
+                    btn.textContent = isEdit ? '💾 Update Invoice' : '💾 Save Invoice'; 
+                } 
+            });
+        }
+
+        // ===== SAVE CLIENT =====
         function saveClient() {
             const name = document.getElementById('clientName')?.value?.trim();
             if (!name) { alert('⚠️ Client Name is required!'); return; }
@@ -1717,6 +1775,7 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Client' : '💾 Save Client'; } });
         }
 
+        // ===== SAVE VESSEL =====
         function saveVessel() {
             const name = document.getElementById('vesselName')?.value?.trim();
             if (!name) { alert('⚠️ Vessel Name is required!'); return; }
@@ -1742,6 +1801,7 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Vessel' : '💾 Save Vessel'; } });
         }
 
+        // ===== SAVE CONTRACT =====
         function saveContract() {
             const title = document.getElementById('contractTitle')?.value?.trim();
             const clientId = document.getElementById('contractClient')?.value;
@@ -1787,6 +1847,7 @@
             }).finally(() => { if (btn) { btn.disabled = false; btn.textContent = isEdit ? '💾 Update Contract' : '💾 Save Contract'; } });
         }
 
+        // ===== SAVE TENDER =====
         function saveTender() {
             const title = document.getElementById('tenderTitle')?.value?.trim();
             const clientId = document.getElementById('tenderClient')?.value;
@@ -1838,72 +1899,7 @@
             });
         }
 
-        function saveInvoice() {
-            const invoiceNumber = document.getElementById('invoiceNumber')?.value?.trim();
-            const vessel = document.getElementById('invoiceVessel')?.value;
-            const charterer = document.getElementById('invoiceCharterer')?.value;
-            const dcr = parseFloat(document.getElementById('invoiceDcr')?.value) || 0;
-            const days = parseInt(document.getElementById('invoiceDays')?.value) || 0;
-            const mobDemob = parseFloat(document.getElementById('invoiceMobDemob')?.value) || 0;
-            const submissionDate = document.getElementById('invoiceSubmissionDate')?.value || '';
-            const expectedPaymentDate = document.getElementById('invoiceExpectedDate')?.value || '';
-            const month = document.getElementById('invoiceMonth')?.value || '';
-            const budgetedSale = parseFloat(document.getElementById('invoiceBudgeted')?.value) || 0;
-            const actualBillInput = document.getElementById('invoiceActual')?.value;
-            
-            if (!invoiceNumber) { alert('⚠️ Invoice Number is required!'); return; }
-            if (!vessel) { alert('⚠️ Please select a Vessel!'); return; }
-            if (!charterer) { alert('⚠️ Please select a Charterer!'); return; }
-            if (!dcr || dcr <= 0) { alert('⚠️ Please enter a valid DCR!'); return; }
-            if (!days || days <= 0) { alert('⚠️ Please enter valid Total Days!'); return; }
-            if (!submissionDate) { alert('⚠️ Please select a Submission Date!'); return; }
-            
-            const totalBill = (dcr * days) + mobDemob;
-            
-            let actualBill = parseFloat(actualBillInput) || 0;
-            if (!actualBillInput || actualBillInput === '' || actualBill === 0) {
-                actualBill = totalBill;
-            }
-            
-            const data = {
-                invoice_number: invoiceNumber,
-                vessel_name: vessel,
-                charterer: charterer,
-                dcr: dcr,
-                duration: days,
-                mob_demob: mobDemob,
-                total_amount: totalBill,
-                submission_date: submissionDate,
-                expected_payment_date: expectedPaymentDate,
-                month: month,
-                budgeted_sale: budgetedSale,
-                actual_bill: actualBill,
-                contract_id: 0
-            };
-            
-            console.log('📦 Saving invoice data:', data);
-            
-            const btn = document.getElementById('modalSaveBtn');
-            if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
-            
-            const isEdit = state.editingId !== null;
-            const promise = isEdit ? putData('invoices', state.editingId, data) : postData('invoices', data);
-            
-            promise.then(() => {
-                closeModal();
-                loadAllData();
-                alert(isEdit ? '✅ Invoice updated!\nTotal Bill: RM ' + totalBill.toLocaleString() : '✅ Invoice added!\nTotal Bill: RM ' + totalBill.toLocaleString());
-            }).catch((err) => {
-                console.error('Error saving invoice:', err);
-                alert('❌ Error saving invoice: ' + err.message);
-            }).finally(() => { 
-                if (btn) { 
-                    btn.disabled = false; 
-                    btn.textContent = isEdit ? '💾 Update Invoice' : '💾 Save Invoice'; 
-                } 
-            });
-        }
-
+        // ===== SAVE UTILIZATION =====
         function saveUtilization() {
             const vesselId = document.getElementById('utilizationVessel')?.value;
             const month = document.getElementById('utilizationMonth')?.value;
@@ -1926,8 +1922,6 @@
                 variance_percent: variancePercent,
                 remarks: remarks
             };
-            
-            console.log('📦 Saving utilization data:', data);
             
             const btn = document.getElementById('modalSaveBtn');
             if (btn) { btn.disabled = true; btn.textContent = '⏳ Saving...'; }
@@ -2042,6 +2036,7 @@
                 render();
             });
             
+            // ===== DELETE BUTTONS =====
             document.querySelectorAll('[data-delete]').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     if (confirm('Delete this item?')) {
@@ -2051,14 +2046,19 @@
                 });
             });
             
+            // ===== EDIT BUTTONS =====
             document.querySelectorAll('[data-edit]').forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const type = btn.dataset.edit;
-                    const id = parseInt(btn.dataset.id);
+                btn.addEventListener('click', function() {
+                    const type = this.dataset.edit;
+                    const id = parseInt(this.dataset.id);
+                    console.log('✏️ Editing:', type, 'ID:', id);
+                    
                     let item = null;
-                    if (type === 'clients') item = state.clients.find(c => c.id === id);
-                    else if (type === 'vessels') item = state.vessels.find(v => v.id === id);
-                    else if (type === 'contracts') {
+                    if (type === 'clients') {
+                        item = state.clients.find(c => c.id === id);
+                    } else if (type === 'vessels') {
+                        item = state.vessels.find(v => v.id === id);
+                    } else if (type === 'contracts') {
                         item = state.contracts.find(c => c.id === id);
                         if (item && item.duration) {
                             const days = parseInt(item.duration);
@@ -2085,8 +2085,12 @@
                     } else if (type === 'utilization') {
                         item = state.utilization.find(u => u.id === id);
                     }
+                    
                     if (item) {
+                        console.log('Opening modal for:', type, item);
                         openModal(type.replace('s', ''), item, id);
+                    } else {
+                        console.log('❌ Item not found for ID:', id);
                     }
                 });
             });
@@ -2216,7 +2220,6 @@
             
             let ganttHtml = '';
             if (ganttTenders.length > 0) {
-                // Find date range
                 let minDate = new Date();
                 let maxDate = new Date();
                 ganttTenders.forEach(t => {
@@ -2384,7 +2387,6 @@
                     <button class="btn btn-primary" id="addTenderBtn">➕ Add Tender</button>
                 </div>
                 
-                <!-- Gantt Chart - Collapsible -->
                 <div class="card gantt-card">
                     <div class="collapsible-header" onclick="toggleGantt()" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:4px 0;">
                         <h3>📊 Tender Timeline (Gantt Chart) 
@@ -3803,6 +3805,19 @@
                 };
                 const utilData = {};
                 monthNames.forEach(m => utilData[m] = 0);
+                
+                // Get from utilization records
+                state.utilization.forEach(u => {
+                    if (u.month && u.onhire_days) {
+                        const monthNum = u.month.split('-')[1];
+                        const monthName = Object.keys(monthMap).find(key => monthMap[key] === monthNum);
+                        if (monthName) {
+                            utilData[monthName] += u.onhire_days || 0;
+                        }
+                    }
+                });
+                
+                // Also from invoices
                 state.invoices.forEach(i => {
                     if (i.month && i.duration) {
                         const monthNum = i.month.split('-')[1];
@@ -3812,6 +3827,7 @@
                         }
                     }
                 });
+                
                 const data = monthNames.map(m => utilData[m]);
                 chartInstances.utilization = new Chart(utilCtx, {
                     type: 'bar',
@@ -3833,7 +3849,10 @@
                         },
                         scales: {
                             y: {
-                                beginAtZero: true
+                                beginAtZero: true,
+                                ticks: {
+                                    stepSize: 1
+                                }
                             }
                         }
                     }
