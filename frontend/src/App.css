@@ -1,0 +1,48 @@
+/* Add these print styles at the end of your App.css */
+
+/* Print Styles */
+@media print {
+  .sidebar {
+    display: none !important;
+  }
+  
+  .main-content {
+    margin-left: 0 !important;
+    padding: 20px !important;
+  }
+  
+  .btn {
+    display: none !important;
+  }
+  
+  .modal-overlay {
+    display: none !important;
+  }
+  
+  .page-header {
+    border-bottom: 2px solid #1a2a6c;
+    padding-bottom: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+    break-inside: avoid;
+  }
+  
+  table {
+    font-size: 12px;
+  }
+  
+  table th {
+    background: #f0f0f0 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  
+  .stat-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd;
+  }
+}
